@@ -12,3 +12,6 @@ wheels/
 
 *.bin
 *.sqlite3
+
+
+src/local/*
