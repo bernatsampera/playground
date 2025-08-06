@@ -1,1 +1,3 @@
 Repo to test various things around llms, langraph, rag, chroma, vector dbs..
+
+Contains mostly logic for services used in other projects, transcriptai, bleakdraft, bjjgym...
