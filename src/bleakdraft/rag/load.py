@@ -4,32 +4,28 @@ import os
 
 from .vectorstore import VectorStoreManager
 from .graph import RAGGraph
+from .chonkiestore import ChonkieStore
 
 # Sample code for testing
-SAMPLE_CODE = """def hello_world():
-    '''
-    Prints Hello, Chonkie!
-    '''
-    print("Hello, Chonkie!")
-
-def goodbye_night():
-    '''
-    Prints 'Good night!'
-    '''
-    print("Good night!")
-
-def hello_world_2():
-    '''
-    Prints 'Hello, Chonkie 2!'
-    '''
-    print("Hello, Chonkie 2!")
+SAMPLE_TEXT = """
+# Get glossary data
+glossary, rules = get_user_glossary(1, 'english', 'spanish')
 
 
-def bons_dia():
-    '''
-    Prints 'Bons dia!'
-    '''
-    print("Bons dia!")
+
+-- Sample glossary table data
+SELECT * FROM glossary WHERE user_id = 1 AND input_language = 'english' AND target_language = 'spanish';
+
+
+
+# Simplified get_user_glossary function
+def get_user_glossary(user_id, input_lang, target_lang):
+    '''Returns (glossary_dict, formatting_rules) for user/languages'''
+    return {'World History': 'Historia Universal', 'execute': 'legalizar'}, \
+           ['Use Spanish address format with comma separators']
+
+
+What can be spoken about about the persons that are in earth
 """ 
 
 warnings.filterwarnings("ignore")
@@ -37,28 +33,17 @@ warnings.filterwarnings("ignore")
 def main():
     """Main execution function"""
     # Initialize vector store manager
-    vector_store_manager = VectorStoreManager()
+    # vector_store_manager = VectorStoreManager()
+    chonkie_store = ChonkieStore()
+    chonkie_store.add_code_chunks(SAMPLE_TEXT)
     
     # Setup code chunks
-    print("Setting up vector store with code chunks...")
-    vector_store_manager.setup_code_chunks(SAMPLE_CODE)
+    # vector_store_manager.setup_code_chunks(SAMPLE_CODE)
+    # vector_store_manager.setup_semantic_chunks(SAMPLE_CODE)
     
-    # Initialize RAG graph
-    # print("Initializing RAG graph...")
-    # rag_graph = RAGGraph(vector_store_manager)
-    
-    # # Run queries
-    # print("\n--- Running RAG Queries ---")
-    
-    # # Query 1
-    # print("\nQuery: What does hello_world do?")
-    # result1 = rag_graph.query("What does hello_world do?")
-    # print("Answer:", result1["answer"])
-    
-    # Query 2
-    # print("\nQuery: What does goodbye_night do?")
-    # result2 = rag_graph.query("What does goodbye_night do?")
-    # print("Answer:", result2["answer"])
 
 if __name__ == "__main__":
     main() 
+
+
+
