@@ -2,8 +2,8 @@ from chonkie import CodeChunker
 from langchain_ollama import ChatOllama
 from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
-from langchain.embeddings import OllamaEmbeddings
-from langchain.chains import RetrievalQA
+from langchain_community.embeddings import OllamaEmbeddings
+from langchain_community.chains import RetrievalQA
 import warnings
 
 warnings.filterwarnings("ignore")

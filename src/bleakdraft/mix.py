@@ -1,8 +1,8 @@
 from langgraph.graph import StateGraph, END
 from langchain_ollama import ChatOllama
 from langchain_core.runnables import RunnableLambda
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OllamaEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from chonkie import CodeChunker
 import warnings
