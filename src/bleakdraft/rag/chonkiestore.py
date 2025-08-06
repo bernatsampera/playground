@@ -1,135 +1,75 @@
-from typing import Any, Dict, Optional, List, cast
+from typing import List
 from langchain_chroma import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
-from chonkie import Chunk, CodeChunker, RecursiveChunker, SemanticSentence
-import os
-from uuid import uuid4
-import sys
-from chonkie import ChromaHandshake, SemanticChunker, CodeChunker
+from chonkie import SemanticChunker
 from rapidfuzz import fuzz
+import os
 
 class ChonkieStore:
-    """
-    Manages a Chroma vector store for code chunks and similarity search.
-    Uses LangChain's Chroma integration for persistent storage and retrieval.
-    """
-    
-    def __init__(self, chroma_db_path: str = "./rag_chroma_db"):
-        """
-        Initialize the vector store manager with persistent ChromaDB storage.
+    """Manages a Chroma vector store for code chunks and similarity searches."""
+
+    def __init__(self, db_path: str = "./rag_chroma_db"):
+        """Initialize Chroma vector store with persistent storage."""
+        self.db_path = db_path
+        os.makedirs(db_path, exist_ok=True)
         
-        Args:
-            chroma_db_path: Directory path for storing the ChromaDB data
-        """
-        self.chroma_db_path = chroma_db_path
-        os.makedirs(chroma_db_path, exist_ok=True)
-        
-        # Initialize Ollama embeddings for text vectorization
         self.embedding = OllamaEmbeddings(model="nomic-embed-text")
-        
-        # Initialize ChromaDB with persistent storage
-        # This creates a persistent client that saves data to disk
-        self.rag_store = Chroma(
+        self.vector_store = Chroma(
             embedding_function=self.embedding,
-            persist_directory=self.chroma_db_path
+            persist_directory=db_path
         )
 
-    def add_code_chunks(self, text: str):
-        """
-        Process code into chunks and add unique chunks to the vector store.
-        
-        Args:
-            code: Source code to be chunked and stored
-            
-        Returns:
-            The configured Chroma vector store instance
-        """
-        
+    def add_code_chunks(self, code: str) -> None:
+        """Chunk code and store unique chunks in the vector store."""
         chunker = SemanticChunker(
-            # embedding_model="minishlab/potion-base-8M",  # Default model
-            threshold=0.5,                               # Similarity threshold (0-1) or (1-100) or "auto"
-            chunk_size=2048,                              # Maximum tokens per chunk
-            min_sentences=1,                             # Initial sentences per chunk
+            threshold=0.5,
+            chunk_size=2048,
+            min_sentences=1,
             delim=["\n\n"]
         )
-        chunks = chunker.chunk(text)
-
-        sentences = chunks[0].sentences
-
-        # Filter out empty sentences
-        sentences = [sentence for sentence in sentences if sentence.text.strip()]
-
-        unique_sentences = []
-        for sentence in sentences:
-            print("--------------START------------------")
-            is_similar = self.sentence_similarity_search(sentence.text)
-            if not is_similar:
-                unique_sentences.append(sentence)
-
-        documents = [Document(page_content=sentence.text.strip(), metadata={"type": self.detect_type(sentence.text)}) for sentence in unique_sentences]
-
-
-        print("--------------END------------------")
+        
+        chunks = chunker.chunk(code)
+        sentences = [s for s in chunks[0].sentences if s.text.strip()]
+        
+        unique_sentences = [
+            s for s in sentences 
+            if not self._is_similar_content(s.text)
+        ]
+        
+        documents = [
+            Document(
+                page_content=s.text.strip(),
+                metadata={"type": self._detect_content_type(s.text)}
+            )
+            for s in unique_sentences
+        ]
         print("documents", documents)
         
-        if len(documents) > 0:
-            self.rag_store.add_documents(documents=documents)
+        if documents:
+            self.vector_store.add_documents(documents=documents)
 
-        # for sentence in sentences:
-        #     self.handshake.write(sentence)
+    def _is_similar_content(self, content: str, threshold: float = 200) -> bool:
+        """Check if content is similar to existing documents."""
+        similar_docs = self.vector_store.similarity_search_with_score(content, k=2)
+        return any(score < threshold for _, score in similar_docs)
 
+    def _score_keywords(self, keywords: List[str], text: str) -> float:
+        """Calculate maximum similarity score for keywords against text."""
+        return max(fuzz.token_set_ratio(k, text) for k in keywords)
 
-    # 200 is just a guess, in future a better logic about this will be needed.
-    def sentence_similarity_search(self, new_content: str, distance_threshold: float = 200) -> bool:
-        """
-        Check if new content is similar to existing documents in the vector store.
+    def _detect_content_type(self, text: str) -> str:
+        """Determine if text is Python, SQL, or plain text based on keyword scores."""
+        text = text.strip().lower()
         
-        Args:
-            new_content: Content to check for similarity
-            metadata: Optional metadata for the content
-            distance_threshold: Threshold for considering documents similar (higher = more similar)
-            
-        Returns:
-            True if similar document found, False otherwise
-        """        
+        PYTHON_KEYWORDS = ['def', 'import', 'return', 'print', 'lambda', 'class', '#']
+        SQL_KEYWORDS = ['select', 'from', 'where', 'insert', 'update', 'delete', '--', 'join']
         
-        # Search for similar documents with similarity scores
-        # print("new_content", new_content[:10])
-        similar_docs = self.rag_store.similarity_search_with_score(new_content, k=2)
-
-        for doc, score in similar_docs:
-            # print("doc", doc.page_content[:10])
-            # print("score", score)
-            # ChromaDB returns similarity scores: lower = more similar
-            if score < distance_threshold:
-                return True
-          
-        return False
-
-    def score_keywords(self, keywords, text):
-        return max([fuzz.token_set_ratio(k, text) for k in keywords])
-
-
-    PYTHON_KEYWORDS = ['def', 'import', 'return', 'print', 'lambda', 'class', '#']
-    SQL_KEYWORDS = ['select', 'from', 'where', 'insert', 'update', 'delete', '--', 'join']
-
-    def detect_type(self,chunk: str) -> str:
-        text = chunk.strip().lower()
-
-        python_score = self.score_keywords(self.PYTHON_KEYWORDS, text)
-        sql_score = self.score_keywords(self.SQL_KEYWORDS, text)
-
-        # Debug (optional)
-        print(f"PYTHON={python_score}, SQL={sql_score}, TEXT='{chunk[:30]}...'")
-
+        python_score = self._score_keywords(PYTHON_KEYWORDS, text)
+        sql_score = self._score_keywords(SQL_KEYWORDS, text)
+        
         max_score = max(python_score, sql_score)
-
+        
         if max_score < 60:
             return "text"
-        if python_score > sql_score:
-            return "python"
-        else:
-            return "sql"
-
-        
+        return "python" if python_score > sql_score else "sql"

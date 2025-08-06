@@ -62,6 +62,13 @@ RAG Context:
         if not self.app:
             raise ValueError("Graph not compiled. Call _build_graph first.")
         
-        input_state: HybridState = {"question": question, "rag_context": None, "answer": None}
+        # Look for similar documents
+        docs = self.vector_store_manager.similarity_search(question, k=2)
+        print("docs found", len(docs))
+        print("docs", docs)
+        
+        context = "\n".join([d.page_content for d in docs])
+
+        input_state: HybridState = {"question": question, "rag_context": context, "answer": None}
         result = self.app.invoke(input_state)
         return result  # type: ignore 

@@ -17,19 +17,16 @@ def main():
     # Initialize RAG graph
     print("Initializing RAG graph...")
     rag_graph = RAGGraph(vector_store_manager)
+
     
     # Run queries
     print("\n--- Running RAG Queries ---")
     
     # Query 1
-    print("\nQuery: What does hello_world do?")
-    result1 = rag_graph.query("What does hello_world do?")
+    print("\nQuery: How to translate a sentence using the glossary?")
+    result1 = rag_graph.query("How to retrieve the glossary for a user?")
     print("Answer:", result1["answer"])
-    
-    # Query 2
-    print("\nQuery: What does goodbye_night do?")
-    result2 = rag_graph.query("What does goodbye_night do?")
-    print("Answer:", result2["answer"])
+
 
 if __name__ == "__main__":
     main() 

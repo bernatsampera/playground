@@ -13,8 +13,8 @@ glossary, rules = get_user_glossary(1, 'english', 'spanish')
 
 
 
--- Sample glossary table data
-SELECT * FROM glossary WHERE user_id = 1 AND input_language = 'english' AND target_language = 'spanish';
+-- Sample data table data
+SELECT * FROM data WHERE user_id = 5 AND input_language = 'data' AND target_language = 'data';
 
 
 
