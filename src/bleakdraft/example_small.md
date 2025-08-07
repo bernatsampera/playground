@@ -1,22 +1,30 @@
-```py
-# Get glossary data
-glossary, rules = get_user_glossary(1, 'english', 'spanish')
-```
+from mcp.server.fastmcp import FastMCP
 
-```sql
--- Sample glossary table data
-SELECT * FROM glossary WHERE user_id = 1 AND input_language = 'english' AND target_language = 'spanish';
-```
+mcp = FastMCP("Math")
 
-```py
-# Simplified get_user_glossary function
-def get_user_glossary(user_id, input_lang, target_lang):
-    """Returns (glossary_dict, formatting_rules) for user/languages"""
-    return {'World History': 'Historia Universal', 'execute': 'legalizar'}, \
-           ['Use Spanish address format with comma separators']
-```
+@mcp.tool()
+def add(a: int, b: int) -> int:
+    """Add two numbers"""
+    return a + b
 
-```py
-# Simplified matching
-matched_glossary = {'World History': 'Historia Universal'}  # Mock matches
-```
+@mcp.tool()
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers"""
+    return a * b
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
+
+
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("Weather")
+
+@mcp.tool()
+async def get_weather(location: str) -> str:
+    """Get weather for location."""
+    return "It's always sunny in New York"
+
+if __name__ == "__main__":
+    mcp.run(transport="streamable-http")
+
