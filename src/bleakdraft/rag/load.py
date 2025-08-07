@@ -8,17 +8,6 @@ from .chonkiestore import ChonkieStore
 
 # Sample code for testing
 SAMPLE_TEXT = '''
-from typing import TypedDict
-from uuid import uuid4
-from langgraph.graph import StateGraph, START
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.types import RunnableConfig, Command
-
-class State(TypedDict):
-    """Holds text data."""
-    text_1: str
-    text_2: str
-
 def create_interrupt_payload(text: str) -> dict:
     """Creates interrupt payload."""
     return {"text_to_revise": text}
@@ -63,10 +52,6 @@ def main():
     resume_map = process_resume_map(graph, config)
     result = graph.invoke(Command(resume=resume_map), config=config)
     print(result)
-
-if __name__ == "__main__":
-    main()
-    
 ''' 
 
 warnings.filterwarnings("ignore")
