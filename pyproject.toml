@@ -19,6 +19,9 @@ dependencies = [
     "llama-index>=0.13.0",
     "rapidfuzz>=3.13.0",
     "langchain-text-splitters>=0.3.9",
+    "autopep8>=2.3.2",
+    "black>=25.1.0",
+    "yapf>=0.43.0",
 ]
 
 [dependency-groups]

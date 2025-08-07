@@ -15,28 +15,58 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import RunnableConfig, Command
 
 class State(TypedDict):
-    """State dictionary to hold text data."""
+    """Holds text data."""
     text_1: str
     text_2: str
 
 def create_interrupt_payload(text: str) -> dict:
-    """Create a standardized interrupt payload for human input."""
+    """Creates interrupt payload."""
     return {"text_to_revise": text}
 
 def process_human_input(state: State, text_key: str) -> dict:
-    """
-    Process human input for a specific text key in the state.
-    
-    Args:
-        state: The current state dictionary
-        text_key: The key in the state to process (e.g., 'text_1')
-    
-    Returns:
-        Updated state fragment with the processed text
-    """
+    """Processes human input for text key."""
     value = interrupt(create_interrupt_payload(state[text_key]))
     return {text_key: value}
 
+def build_workflow() -> StateGraph:
+    """Configures state graph workflow."""
+    graph_builder = StateGraph(State)
+    graph_builder.add_node("human_node_1", lambda state: process_human_input(state, "text_1"))
+    graph_builder.add_node("human_node_2", lambda state: process_human_input(state, "text_2"))
+    graph_builder.add_edge(START, "human_node_1")
+    graph_builder.add_edge(START, "human_node_2")
+    return graph_builder
+
+def initialize_workflow() -> tuple[StateGraph, InMemorySaver]:
+    """Initializes workflow with checkpointer."""
+    checkpointer = InMemorySaver()
+    graph = build_workflow().compile(checkpointer=checkpointer)
+    return graph, checkpointer
+
+def create_thread_config() -> RunnableConfig:
+    """Creates config with unique thread ID."""
+    return {"configurable": {"thread_id": str(uuid4())}}
+
+def process_resume_map(parent, thread_config: RunnableConfig) -> dict:
+    """Creates resume map from interrupt states."""
+    return {
+        i.interrupt_id: f"human input for prompt {i.value}"
+        for i in parent.get_state(thread_config).interrupts
+    }
+
+def main():
+    """Executes workflow."""
+    graph, checkpointer = initialize_workflow()
+    config = create_thread_config()
+    initial_state = {"text_1": "original text 1", "text_2": "original text 2"}
+    graph.invoke(initial_state, config=config)
+    resume_map = process_resume_map(graph, config)
+    result = graph.invoke(Command(resume=resume_map), config=config)
+    print(result)
+
+if __name__ == "__main__":
+    main()
+    
 ''' 
 
 warnings.filterwarnings("ignore")
