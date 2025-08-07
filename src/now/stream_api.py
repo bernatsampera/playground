@@ -1,44 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Callable
 import asyncio
 import concurrent.futures
-from basicgraph import TrackedStateGraph, State, event_emitter
+from event_emitter import event_emitter
+from graph import create_sample_graph
 
 app = FastAPI(title="Graph Event Streaming API", version="1.0.0")
 
 class InitialState(BaseModel):
     message: str
-
-def create_graph_factory() -> Callable:
-    """Factory function to create and compile a graph"""
-    def factory():
-        # Define two simple nodes
-        def node1(state: State) -> State:
-            return {"message": "Hello from Node 1"}
-
-        def node2(state: State) -> State:
-            return {"message": state["message"] + " -> Node 2"}
-
-        # Create graph
-        graph = TrackedStateGraph(State)
-
-        # Add nodes
-        graph.add_node("node1", node1)
-        graph.add_node("node2", node2)
-
-        # Add edge
-        graph.add_edge("node1", "node2")
-
-        # Set entry and finish points
-        graph.set_entry_point("node1")
-        graph.set_finish_point("node2")
-
-        # Compile and return
-        return graph.compile()
-    
-    return factory
 
 @app.post("/stream-graph")
 async def stream_graph_execution(initial_state: InitialState):
@@ -57,7 +28,7 @@ async def stream_graph_execution(initial_state: InitialState):
         state_dict = initial_state.model_dump()
         
         # Create the graph factory
-        graph_factory = create_graph_factory()
+        graph_factory = create_sample_graph()
         
         # Run the graph in a separate thread to avoid blocking
         loop = asyncio.get_event_loop()

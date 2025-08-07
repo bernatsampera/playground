@@ -1,5 +1,4 @@
-from typing import Callable, TypedDict, Optional, AsyncGenerator
-from langgraph.graph import StateGraph
+from typing import AsyncGenerator, Callable
 import asyncio
 import json
 from datetime import datetime
@@ -7,8 +6,6 @@ import queue
 import threading
 from contextlib import contextmanager
 
-class State(TypedDict):
-    message: str
 
 class EventEmitter:
     def __init__(self):
@@ -16,7 +13,7 @@ class EventEmitter:
         self.completed = threading.Event()
         self.execution_started = False
     
-    def emit_event_sync(self, node_name: str, state: State):
+    def emit_event_sync(self, node_name: str, state: dict):
         """Synchronous method to emit events from non-async contexts"""
         event_data = {
             "node_name": node_name,
@@ -102,7 +99,7 @@ class EventEmitter:
             result = runner.invoke(initial_state)
             
             # Emit final result
-            result_state: State = {"message": result.get("message", "")}
+            result_state = {"message": result.get("message", "")}
             print(f"Final result: {result_state}")
             self.emit_event_sync("GRAPH_COMPLETE", result_state)
             
@@ -140,45 +137,6 @@ class EventEmitter:
             }
             yield f"data: {json.dumps(final_event)}\n\n"
 
+
 # Global event emitter instance
 event_emitter = EventEmitter()
-
-def with_state_tracking(node_func: Callable[[State], State], node_name: str) -> Callable[[State], State]:
-    def wrapper(state: State) -> State:
-        result = node_func(state)
-        # Emit event synchronously
-        event_emitter.emit_event_sync(node_name, result)
-        return result
-    return wrapper
-
-class TrackedStateGraph(StateGraph):
-    def add_node(self, key: str, action: Callable[[State], State]) -> None: # type: ignore
-        wrapped_action = with_state_tracking(action, key)
-        super().add_node(key, wrapped_action) # type: ignore
-
-# Define two simple nodes
-def node1(state: State) -> State:
-    return {"message": "Hello from Node 1"}
-
-def node2(state: State) -> State:
-    return {"message": state["message"] + " -> Node 2"}
-
-# Create graph
-graph = TrackedStateGraph(State)
-
-# Add nodes
-graph.add_node("node1", node1)
-graph.add_node("node2", node2)
-
-# Add edge
-graph.add_edge("node1", "node2")
-
-# Set entry and finish points
-graph.set_entry_point("node1")
-graph.set_finish_point("node2")
-
-# Compile the graph (ready for use)
-runner = graph.compile()
-
-# Note: The graph execution is now handled by the FastAPI endpoint
-# To test, run: python stream_api.py
