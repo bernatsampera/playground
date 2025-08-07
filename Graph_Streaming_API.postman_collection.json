@@ -1,0 +1,156 @@
+{
+  "info": {
+    "_postman_id": "12345678-1234-1234-1234-123456789abc",
+    "name": "Graph Streaming API",
+    "description": "Collection for testing Server-Sent Events with the Graph Streaming API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Stream Graph Execution",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// This endpoint streams events via Server-Sent Events",
+              "// Make sure to check the response in the 'Response' tab",
+              "// You should see real-time events as they arrive"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "text/event-stream",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"message\": \"Test message for streaming\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/stream-graph",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["stream-graph"]
+        },
+        "description": "Streams graph execution events in real-time. Each event contains:\n- node_name: The name of the node that just executed\n- state: The current state after node execution\n- timestamp: When the event occurred\n\nExpected response: Stream of SSE events showing state changes as the graph executes."
+      },
+      "response": [
+        {
+          "name": "Example Streaming Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"Test message\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/stream-graph",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["stream-graph"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "plain",
+          "header": [
+            {
+              "key": "content-type",
+              "value": "text/event-stream"
+            }
+          ],
+          "cookie": [],
+          "body": "data: {\"node_name\": \"node1\", \"state\": {\"message\": \"Hello from Node 1\"}, \"timestamp\": \"2024-01-15T10:30:00.123456\"}\n\ndata: {\"node_name\": \"node2\", \"state\": {\"message\": \"Hello from Node 1 -> Node 2\"}, \"timestamp\": \"2024-01-15T10:30:00.234567\"}\n\ndata: {\"node_name\": \"GRAPH_COMPLETE\", \"state\": {\"message\": \"Hello from Node 1 -> Node 2\"}, \"timestamp\": \"2024-01-15T10:30:00.345678\"}\n\n"
+        }
+      ]
+    },
+    {
+      "name": "API Root - Check Service",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": [""]
+        },
+        "description": "Check if the API service is running and get available endpoints."
+      },
+      "response": []
+    },
+    {
+      "name": "API Documentation",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/docs",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["docs"]
+        },
+        "description": "Open the FastAPI automatic documentation (Swagger UI) in your browser."
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global setup for the collection",
+          "pm.globals.set('base_url', 'http://localhost:8000');"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}
