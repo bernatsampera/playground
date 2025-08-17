@@ -1,0 +1,65 @@
+<h2 id="services-and-libraries">Services and Libraries</h2>
+<ul>
+<li><strong>langgraph</strong> – graph‑based workflow engine for LLM applications.  </li>
+<li><strong>langgraph.checkpoint.memory.InMemorySaver</strong> – keeps state in RAM.  </li>
+<li><strong>langgraph.checkpoint.sqlite.SqliteSaver</strong> – persists state to a SQLite file.  </li>
+<li><strong>langchain.chat_models.init_chat_model</strong> – loads a LLM (e.g., Gemini).  </li>
+<li><strong>dotenv.load_dotenv</strong> – loads environment variables for secure credentials.</li>
+</ul>
+<h2 id="implementation-details-of-the-topic">Implementation Details of the Topic</h2>
+<ol>
+<li>
+<p><strong>Initialize the LLM</strong><br />
+<code>python
+   llm = init_chat_model("google_genai:gemini-2.5-flash-lite")</code></p>
+</li>
+<li>
+<p><strong>Define the chatbot node</strong> – returns the LLM’s reply.<br />
+<code>python
+   def chatbot(state: State):
+       return {"messages": [llm.invoke(state["messages"])]}</code></p>
+</li>
+<li>
+<p><strong>Build the graph</strong><br />
+<code>python
+   graph_builder = StateGraph(State)
+   graph_builder.add_node("chatbot", chatbot)
+   graph_builder.add_edge(START, "chatbot")
+   graph_builder.add_edge("chatbot", END)</code></p>
+</li>
+<li>
+<p><strong>Choose a checkpointer</strong><br />
+<em>In‑memory</em> (short‑term sessions):<br />
+<code>python
+   from langgraph.checkpoint.memory import InMemorySaver
+   checkpointer = InMemorySaver()</code>
+   <em>SQLite</em> (long‑term persistence):<br />
+<code>python
+   import sqlite3
+   from langgraph.checkpoint.sqlite import SqliteSaver
+   conn = sqlite3.connect("checkpoints.sqlite", check_same_thread=False)
+   checkpointer = SqliteSaver(conn)</code></p>
+</li>
+<li>
+<p><strong>Compile the graph with the checkpointer</strong><br />
+<code>python
+   graph = graph_builder.compile(checkpointer=checkpointer)</code></p>
+</li>
+<li>
+<p><strong>Configure the thread ID</strong> – used by the checkpointer to isolate conversations.<br />
+<code>python
+   config = RunnableConfig({"configurable": {"thread_id": "1"}})</code></p>
+</li>
+<li>
+<p><strong>Stream updates to the user</strong> – yields partial results as the LLM generates them.<br />
+<code>python
+   def stream_graph_updates(user_input: str):
+       events = graph.stream(
+           {"messages": [{"role": "user", "content": user_input}]},
+           config,
+           stream_mode="values",
+       )
+       for event in events:
+           event["messages"][-1].pretty_print()</code></p>
+</li>
+</ol>
