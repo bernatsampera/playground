@@ -17,3 +17,4 @@ wheels/
 src/local/*
 
 **/*/*.db
+.env
