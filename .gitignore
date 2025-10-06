@@ -18,3 +18,5 @@ src/local/*
 
 **/*/*.db
 .env
+
+.vscode/

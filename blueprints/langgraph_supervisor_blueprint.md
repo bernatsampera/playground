@@ -17,6 +17,8 @@ The pattern consists of three main components:
 ```python
 from typing import Annotated, List, TypedDict
 from langchain_core.messages import MessageLikeRepresentation
+from langgraph.graph.message import add_messages
+from langgraph.types import Command
 
 class SupervisorStateInput(TypedDict):
     """Initial input for the supervisor graph"""
@@ -26,7 +28,7 @@ class SupervisorStateInput(TypedDict):
 class SupervisorState(SupervisorStateInput):
     """Complete state for the supervisor graph"""
     # Essential tracking variables
-    conversation_history: Annotated[list[MessageLikeRepresentation], override_reducer]
+    conversation_history: Annotated[list[MessageLikeRepresentation], add_messages]
     iteration_count: int = 0
 ```
 
@@ -234,18 +236,6 @@ def get_buffer_string_with_tools(messages: list[BaseMessage]) -> str:
         else:
             lines.append(f"{m.__class__.__name__}: {m.content}")
     return "\n".join(lines)
-```
-
-### State Reducer
-
-```python
-import operator
-
-def override_reducer(current_value, new_value):
-    """Reducer that allows new value to completely replace the old one."""
-    if isinstance(new_value, dict) and new_value.get("type") == "override":
-        return new_value.get("value", new_value)
-    return operator.add(current_value, new_value)
 ```
 
 ## Graph Assembly
