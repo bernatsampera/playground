@@ -1,10 +1,12 @@
 import json
 import sys
 from langchain_ollama import ChatOllama
+from langchain.chat_models import init_chat_model
 
 
 # llm = ChatOllama(model="llama3.1")
-llm = ChatOllama(model="gpt-oss:20b")
+# llm = ChatOllama(model="gpt-oss:20b")
+llm = init_chat_model("ollama:gpt-oss:20b")
 
 
 def main():
