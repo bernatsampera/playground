@@ -1,23 +1,20 @@
 import json
-import sys
-from langchain_ollama import ChatOllama
-from langchain.chat_models import init_chat_model
+from trace import trace
 
+from langchain.chat_models import init_chat_model
 
 # llm = ChatOllama(model="llama3.1")
 # llm = ChatOllama(model="gpt-oss:20b")
-llm = init_chat_model("ollama:gpt-oss:20b")
+llm = init_chat_model("ollama:qwen3:30b", reasoning=False)
 
 
 def main():
-    # Read the JSON trace from the file
-    trace_file = "src/test_tools_locally/trace.json"
-    with open(trace_file, "r") as f:
-        trace = json.load(f)
+    # Use the imported trace from trace.py
+    trace_data = trace
 
     # Extract system prompt (first message, role: "system")
     system_prompt = next(
-        (msg["content"] for msg in trace if msg["role"] == "system"), None
+        (msg["content"] for msg in trace_data if msg["role"] == "system"), None
     )
     if not system_prompt:
         print("Error: No system prompt found in trace.")
@@ -25,7 +22,7 @@ def main():
 
     # Extract tools (all role: "tool" messages)
     tools = []
-    for msg in trace:
+    for msg in trace_data:
         if msg["role"] == "tool":
             tool_def = msg["content"]
             if isinstance(tool_def, dict) and tool_def.get("type") == "function":
