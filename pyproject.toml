@@ -39,6 +39,7 @@ dependencies = [
     "datetime>=5.5",
     "langchain-openai>=0.3.32",
     "ollama>=0.5.1",
+    "modal>=1.2.4",
 ]
 
 [dependency-groups]
