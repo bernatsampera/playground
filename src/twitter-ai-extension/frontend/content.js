@@ -1,6 +1,7 @@
 let uiContainer = null;
 let selectionMode = false;
 let selectedTweet = null;
+let currentReply = null;  // Store current AI reply for feedback
 
 console.log("🔥 content.js loaded!");
 
@@ -118,6 +119,48 @@ function createOverlay() {
       .close-btn:hover {
         color: #000;
       }
+      .feedback-section {
+        margin-top: 10px;
+        padding: 10px;
+        background: #f0f0f0;
+        border-radius: 4px;
+      }
+      .feedback-buttons {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .feedback-btn {
+        padding: 6px 12px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .feedback-btn:hover {
+        background: #f8f9fa;
+      }
+      .feedback-btn.good {
+        color: #22c55e;
+      }
+      .feedback-btn.bad {
+        color: #ef4444;
+      }
+      .quality-score {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+      .quality-score.high {
+        color: #22c55e;
+      }
+      .quality-score.medium {
+        color: #f59e0b;
+      }
+      .quality-score.low {
+        color: #ef4444;
+      }
     </style>
     <div class="ai-assistant-overlay">
       <button class="close-btn">×</button>
@@ -180,10 +223,18 @@ function createOverlay() {
     response.innerHTML = "";
 
     try {
+      // Get or create user ID (stored in local storage)
+      let userId = localStorage.getItem('twitter_ai_user_id');
+      if (!userId) {
+        userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('twitter_ai_user_id', userId);
+      }
+
       const res = await fetch("http://localhost:8000/api/analyze_tweet", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
+          user_id: userId,
           tweet_url: selectedTweet.tweet_url,
           tweet_text: selectedTweet.tweet_text,
           helper_text: helperText.value
@@ -191,7 +242,41 @@ function createOverlay() {
       });
 
       const data = await res.json();
-      response.innerHTML = `<strong>AI Reply:</strong><br>${data.reply}`;
+      currentReply = data.reply;
+
+      // Display reply with quality score
+      const scoreClass = data.quality_score >= 80 ? 'high' : data.quality_score >= 60 ? 'medium' : 'low';
+      response.innerHTML = `
+        <strong>AI Reply:</strong><br>${data.reply}
+        <div class="quality-score ${scoreClass}">
+          Quality Score: ${data.quality_score.toFixed(1)}/100 - ${data.quality_feedback}
+        </div>
+        <div class="feedback-section">
+          <div style="font-size: 12px; margin-bottom: 5px;">Was this helpful?</div>
+          <div class="feedback-buttons">
+            <button class="feedback-btn good" data-feedback="good">👍 Good</button>
+            <button class="feedback-btn bad" data-feedback="bad">👎 Bad</button>
+            <button class="feedback-btn" data-feedback="too_formal">Too formal</button>
+            <button class="feedback-btn" data-feedback="too_casual">Too casual</button>
+          </div>
+        </div>
+      `;
+
+      // Add feedback button listeners
+      const feedbackButtons = response.querySelectorAll('.feedback-btn');
+      feedbackButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const feedbackType = btn.getAttribute('data-feedback');
+          await submitFeedback(userId, feedbackType);
+
+          // Visual feedback
+          btn.style.background = '#e5e7eb';
+          setTimeout(() => {
+            btn.style.background = 'white';
+          }, 1000);
+        });
+      });
+
     } catch (e) {
       response.innerHTML = `<strong>Error:</strong> ${e.message}`;
     }
@@ -305,4 +390,22 @@ function removeHighlights() {
     tweet.style.outline = "";
     tweet.style.cursor = "";
   });
+}
+
+async function submitFeedback(userId, feedbackType) {
+  try {
+    await fetch("http://localhost:8000/api/feedback", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        user_id: userId,
+        tweet_text: selectedTweet.tweet_text,
+        ai_reply: currentReply,
+        feedback: feedbackType
+      })
+    });
+    console.log("Feedback submitted:", feedbackType);
+  } catch (e) {
+    console.error("Failed to submit feedback:", e);
+  }
 }
