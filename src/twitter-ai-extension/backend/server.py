@@ -47,11 +47,11 @@ def get_model_for_context(tweet_text: str) -> ChatOllama:
     else:  # Long tweet
         temp = 0.7  # More focused responses
 
-    return ChatOllama(model="llama3.1", temperature=temp)
+    return ChatOllama(model="gemma3:12b", temperature=temp)
 
 
 # Default model instance
-model = ChatOllama(model="llama3.1", temperature=0.7)
+model = ChatOllama(model="gemma3:12b", temperature=0.7)
 
 # In-memory user profile storage (use proper DB in production)
 user_profiles: Dict[str, UserProfile] = {}

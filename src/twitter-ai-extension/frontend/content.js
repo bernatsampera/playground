@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 function createOverlay() {
   uiContainer = document.createElement("div");
   // Attach a Shadow DOM to prevent Twitter styles from breaking your UI
-  const shadow = uiContainer.attachShadow({mode: "open"});
+  const shadow = uiContainer.attachShadow({ mode: "open" });
 
   // Create the HTML structure
   const wrapper = document.createElement("div");
@@ -36,19 +36,25 @@ function createOverlay() {
         width: 320px;
         background: white;
         z-index: 9999;
-        padding: 20px;
+        padding: 16px;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
       .ai-assistant-overlay h3 {
-        margin: 0 0 15px 0;
+        margin: 0 0 12px 0;
         font-size: 16px;
         font-weight: 600;
+        color: black;
+      }
+      .ai-assistant-overlay label {
+        font-size: 13px;
+        color: black;
+        margin-bottom: 4px;
       }
       .ai-assistant-overlay textarea {
         width: 100%;
-        min-height: 80px;
+        min-height: 60px;
         padding: 8px;
         border: 1px solid #ccc;
         border-radius: 4px;
@@ -62,49 +68,71 @@ function createOverlay() {
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
-        transition: background-color 0.2s;
       }
       .btn-primary {
-        background: #1d9bf0;
+        background: black;
         color: white;
         margin-right: 8px;
       }
       .btn-primary:hover {
-        background: #1a8cd8;
+        background:rgb(111, 111, 111);
       }
       .btn-primary:disabled {
-        background: #94a3b8;
+        background: #ccc;
         cursor: not-allowed;
       }
       .btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
+        background: white;
+        color: black;
+        border: 1px solid #ccc;
       }
       .btn-secondary:hover {
-        background: #e5e7eb;
+        background:rgb(79, 79, 79);
+        color: white;
+        border-color:rgb(79, 79, 79);
       }
       .tweet-preview {
-        background: #f8f9fa;
+        background: #f5f5f5;
         color: black;
         padding: 10px;
         border-radius: 4px;
         margin: 10px 0;
         font-size: 13px;
-        border-left: 3px solid #1d9bf0;
+        border-left: 2px solid black;
       }
       .tweet-preview strong {
-        color: #1d9bf0;
+        color: black;
       }
       .response-area {
-        background: #f8f9fa;
+        margin-top: 12px;
+        border-top: 1px solid #e5e5e5;
+        padding-top: 12px;
+      }
+      .reply-content {
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 12px;
         color: black;
-        padding: 10px;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .action-btn {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        background: white;
+        color: black;
         border-radius: 4px;
-        margin: 10px 0;
         font-size: 13px;
-        white-space: pre-wrap;
-        max-height: 200px;
-        overflow-y: auto;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .action-btn:hover {
+        background: rgb(34, 34, 34);
+        color: white;
+        border-color:rgb(34, 34, 34);
       }
       .close-btn {
         position: absolute;
@@ -114,52 +142,10 @@ function createOverlay() {
         border: none;
         font-size: 20px;
         cursor: pointer;
-        color: #666;
+        color: black;
       }
       .close-btn:hover {
-        color: #000;
-      }
-      .feedback-section {
-        margin-top: 10px;
-        padding: 10px;
-        background: #f0f0f0;
-        border-radius: 4px;
-      }
-      .feedback-buttons {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-      .feedback-btn {
-        padding: 6px 12px;
-        border: 1px solid #ddd;
-        background: white;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-      }
-      .feedback-btn:hover {
-        background: #f8f9fa;
-      }
-      .feedback-btn.good {
-        color: #22c55e;
-      }
-      .feedback-btn.bad {
-        color: #ef4444;
-      }
-      .quality-score {
-        font-size: 12px;
-        color: #666;
-        margin-top: 5px;
-      }
-      .quality-score.high {
-        color: #22c55e;
-      }
-      .quality-score.medium {
-        color: #f59e0b;
-      }
-      .quality-score.low {
-        color: #ef4444;
+        color: rgb(34, 34, 34);
       }
     </style>
     <div class="ai-assistant-overlay">
@@ -232,7 +218,7 @@ function createOverlay() {
 
       const res = await fetch("http://localhost:8000/api/analyze_tweet", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
           tweet_url: selectedTweet.tweet_url,
@@ -244,37 +230,24 @@ function createOverlay() {
       const data = await res.json();
       currentReply = data.reply;
 
-      // Display reply with quality score
-      const scoreClass = data.quality_score >= 80 ? 'high' : data.quality_score >= 60 ? 'medium' : 'low';
+      // Display reply with action buttons
       response.innerHTML = `
-        <strong>AI Reply:</strong><br>${data.reply}
-        <div class="quality-score ${scoreClass}">
-          Quality Score: ${data.quality_score.toFixed(1)}/100 - ${data.quality_feedback}
-        </div>
-        <div class="feedback-section">
-          <div style="font-size: 12px; margin-bottom: 5px;">Was this helpful?</div>
-          <div class="feedback-buttons">
-            <button class="feedback-btn good" data-feedback="good">👍 Good</button>
-            <button class="feedback-btn bad" data-feedback="bad">👎 Bad</button>
-            <button class="feedback-btn" data-feedback="too_formal">Too formal</button>
-            <button class="feedback-btn" data-feedback="too_casual">Too casual</button>
-          </div>
+        <div class="reply-content">${data.reply}</div>
+        <div class="action-buttons">
+          <button class="action-btn copy-btn">Copy</button>
+          <button class="action-btn reply-btn">Reply</button>
         </div>
       `;
 
-      // Add feedback button listeners
-      const feedbackButtons = response.querySelectorAll('.feedback-btn');
-      feedbackButtons.forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const feedbackType = btn.getAttribute('data-feedback');
-          await submitFeedback(userId, feedbackType);
+      // Copy button
+      response.querySelector('.copy-btn').addEventListener('click', () => {
+        navigator.clipboard.writeText(data.reply);
+        console.log('Reply copied to clipboard');
+      });
 
-          // Visual feedback
-          btn.style.background = '#e5e7eb';
-          setTimeout(() => {
-            btn.style.background = 'white';
-          }, 1000);
-        });
+      // Reply button
+      response.querySelector('.reply-btn').addEventListener('click', () => {
+        console.log('Reply button clicked');
       });
 
     } catch (e) {
@@ -292,7 +265,7 @@ function createOverlay() {
       uiContainer = null;
       disableTweetSelection();
     },
-    {once: true}
+    { once: true }
   );
 }
 
@@ -390,22 +363,4 @@ function removeHighlights() {
     tweet.style.outline = "";
     tweet.style.cursor = "";
   });
-}
-
-async function submitFeedback(userId, feedbackType) {
-  try {
-    await fetch("http://localhost:8000/api/feedback", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        user_id: userId,
-        tweet_text: selectedTweet.tweet_text,
-        ai_reply: currentReply,
-        feedback: feedbackType
-      })
-    });
-    console.log("Feedback submitted:", feedbackType);
-  } catch (e) {
-    console.error("Failed to submit feedback:", e);
-  }
 }
