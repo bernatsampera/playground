@@ -1,4 +1,8 @@
+import json
 import re
+import uuid
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 from all_forbidden_words import forbidden_words
@@ -8,6 +12,9 @@ from langchain_ollama import ChatOllama
 from pydantic import BaseModel
 from quality_scorer import ReplyScorer
 from user_profile import UserProfile
+
+# Path to store Q&A history
+QA_HISTORY_PATH = Path("qa_history.json")
 
 app = FastAPI()
 
@@ -60,6 +67,30 @@ user_profiles: Dict[str, UserProfile] = {}
 scorer = ReplyScorer()
 
 
+def load_qa_history() -> dict:
+    """Load Q&A history from JSON file"""
+    if QA_HISTORY_PATH.exists():
+        try:
+            with open(QA_HISTORY_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {}
+    return {}
+
+
+def save_qa_entry(question_id: str, question_text: str, answer_text: str, tweet_url: str, user_id: str) -> None:
+    """Save a Q&A entry to the JSON history file"""
+    history = load_qa_history()
+
+    history[question_id] = {
+        "question": question_text,
+        "answer": answer_text
+    }
+
+    with open(QA_HISTORY_PATH, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+
+
 def get_user_profile(user_id: str) -> UserProfile:
     """Get or create user profile"""
     if user_id not in user_profiles:
@@ -69,6 +100,14 @@ def get_user_profile(user_id: str) -> UserProfile:
 
 @app.post("/api/analyze_tweet")
 def analyze(payload: TweetPayload):
+    # Generate unique question ID
+    question_id = str(uuid.uuid4())
+
+    # Build question text from tweet and helper text
+    question_text = f"Tweet: {payload.tweet_text}"
+    if payload.helper_text:
+        question_text += f"\nHelper text: {payload.helper_text}"
+
     # Get user profile
     user_profile = get_user_profile(payload.user_id)
 
@@ -120,8 +159,19 @@ def analyze(payload: TweetPayload):
     quality_scores = scorer.score_reply(cleaned_reply, payload.tweet_text)
     print(f"📊 Quality Score: {quality_scores['total_score']:.1f}/100")
 
+    # Save Q&A entry to JSON file
+    save_qa_entry(
+        question_id=question_id,
+        question_text=question_text,
+        answer_text=cleaned_reply,
+        tweet_url=payload.tweet_url,
+        user_id=payload.user_id
+    )
+    print(f"💾 Saved Q&A entry with ID: {question_id}")
+
     return {
         "reply": cleaned_reply,
+        "question_id": question_id,
         "user_id": payload.user_id,
         "style_hints": style_hints if style_hints else "default style",
         "quality_score": quality_scores["total_score"],

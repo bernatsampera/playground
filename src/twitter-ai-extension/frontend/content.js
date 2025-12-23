@@ -170,7 +170,6 @@ function createOverlay() {
   document.body.appendChild(uiContainer);
 
   // Get references to the elements
-  const overlay = shadow.querySelector(".ai-assistant-overlay");
   const selectBtn = shadow.getElementById("selectTweetBtn");
   const clearBtn = shadow.getElementById("clearBtn");
   const sendBtn = shadow.getElementById("sendBtn");
