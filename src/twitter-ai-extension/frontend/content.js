@@ -336,11 +336,20 @@ function findClosestTweet(el) {
 }
 
 function extractTweetText(article) {
-  const spans = article.querySelectorAll("span");
-  return Array.from(spans)
-    .map((s) => s.innerText)
-    .join(" ")
-    .trim();
+  // The actual tweet text is in a div with data-testid="tweetText"
+  const tweetTextDiv = article.querySelector("[data-testid='tweetText']");
+  if (tweetTextDiv) {
+    // Use textContent to get just the text, not innerText which includes more
+    return tweetTextDiv.textContent.trim();
+  }
+
+  // Fallback: try to find the main tweet container
+  const tweetText = article.querySelector("[data-testid='tweet'] div[lang]");
+  if (tweetText) {
+    return tweetText.textContent.trim();
+  }
+
+  return "";
 }
 
 function extractTweetUrl(article) {
