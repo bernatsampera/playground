@@ -1,374 +1,572 @@
-let uiContainer = null;
-let selectionMode = false;
-let selectedTweet = null;
-let currentReply = null;  // Store current AI reply for feedback
+// ========================================
+// Twitter AI Assistant - Content Script
+// ========================================
 
-console.log("🔥 content.js loaded!");
+console.log("Twitter AI Assistant loaded!");
 
-// Listen for messages from background script
-chrome.runtime.onMessage.addListener((msg) => {
-  console.log("Received message:", msg);
-  if (msg.action === "toggle_ui") {
-    if (uiContainer) {
-      // If open, close it
-      uiContainer.remove();
-      uiContainer = null;
-      disableTweetSelection();
-    } else {
-      createOverlay();
+// ========================================
+// State Management
+// ========================================
+const State = {
+  uiContainer: null,
+  selectionMode: false,
+  selectedTweet: null,
+  currentReply: null
+};
+
+// ========================================
+// CSS Loader
+// ========================================
+async function loadCSS(shadowRoot) {
+  try {
+    const response = await fetch(chrome.runtime.getURL('content.css'));
+    const css = await response.text();
+    const style = document.createElement('style');
+    style.textContent = css;
+    shadowRoot.appendChild(style);
+  } catch (error) {
+    console.error('Failed to load CSS:', error);
+    injectFallbackStyles(shadowRoot);
+  }
+}
+
+function injectFallbackStyles(shadowRoot) {
+  const style = document.createElement('style');
+  style.textContent = `
+    .ai-assistant-overlay {
+      position: fixed; top: 20px; right: 20px;
+      width: 320px; background: white;
+      z-index: 9999; padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .ai-assistant-overlay h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: black;
+    }
+    .btn-primary {
+      background: black;
+      color: white;
+      margin-right: 8px;
+    }
+    .btn-secondary {
+      background: white;
+      color: black;
+      border: 1px solid #ccc;
+    }
+  `;
+  shadowRoot.appendChild(style);
+}
+
+// ========================================
+// Notification Module
+// ========================================
+const Notification = {
+  show(message, duration = 3000) {
+    const notification = document.createElement('div');
+    notification.className = 'ai-assistant-notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, duration);
+  }
+};
+
+// ========================================
+// Utility Functions
+// ========================================
+const Utils = {
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  extractTweetText(article) {
+    const tweetTextDiv = article.querySelector("[data-testid='tweetText']");
+    if (tweetTextDiv) {
+      return tweetTextDiv.textContent.trim();
+    }
+
+    const tweetText = article.querySelector("[data-testid='tweet'] div[lang]");
+    if (tweetText) {
+      return tweetText.textContent.trim();
+    }
+
+    return "";
+  },
+
+  extractTweetUrl(article) {
+    const anchor = article.querySelector("a[href*='/status/']");
+    return anchor ? anchor.href : null;
+  },
+
+  findClosestTweet(el) {
+    return el.closest("article");
+  },
+
+  async pasteTextIntoEditable(element, text) {
+    try {
+      element.focus();
+
+      // Clear existing content safely
+      while (element.firstChild) {
+        element.removeChild(element.firstChild);
+      }
+
+      // Try multiple approaches to insert text in a way React recognizes
+
+      // Approach 1: Simulate typing character by character
+      // This is the most reliable for React apps
+      element.textContent = text;
+
+      // Dispatch events that React expects
+      const events = [
+        new FocusEvent('focus', { bubbles: true }),
+        new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          data: text,
+          inputType: 'insertText'
+        }),
+        new Event('change', { bubbles: true })
+      ];
+
+      for (const event of events) {
+        element.dispatchEvent(event);
+      }
+
+      // Approach 2: Try execCommand as fallback
+      if (element.textContent !== text) {
+        element.textContent = '';
+        const success = document.execCommand('insertText', false, text);
+        if (!success) {
+          element.textContent = text;
+        }
+      }
+
+      // Verify text was inserted
+      return element.textContent === text || element.innerText === text;
+    } catch (error) {
+      console.log('Text insertion failed:', error.message);
+      // Last resort: just set textContent
+      try {
+        element.textContent = text;
+        return true;
+      } catch {
+        return false;
+      }
     }
   }
-});
+};
 
-function createOverlay() {
-  uiContainer = document.createElement("div");
-  // Attach a Shadow DOM to prevent Twitter styles from breaking your UI
-  const shadow = uiContainer.attachShadow({ mode: "open" });
+// ========================================
+// Tweet Selection Module
+// ========================================
+const TweetSelection = {
+  enable() {
+    State.selectionMode = true;
+    this.highlightTweets();
 
-  // Create the HTML structure
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = `
-    <style>
-      .ai-assistant-overlay {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 320px;
-        background: white;
-        z-index: 9999;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      }
-      .ai-assistant-overlay h3 {
-        margin: 0 0 12px 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: black;
-      }
-      .ai-assistant-overlay label {
-        font-size: 13px;
-        color: black;
-        margin-bottom: 4px;
-      }
-      .ai-assistant-overlay textarea {
-        width: 100%;
-        min-height: 60px;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 14px;
-        resize: vertical;
-      }
-      .ai-assistant-overlay button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-      }
-      .btn-primary {
-        background: black;
-        color: white;
-        margin-right: 8px;
-      }
-      .btn-primary:hover {
-        background:rgb(111, 111, 111);
-      }
-      .btn-primary:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-      }
-      .btn-secondary {
-        background: white;
-        color: black;
-        border: 1px solid #ccc;
-      }
-      .btn-secondary:hover {
-        background:rgb(79, 79, 79);
-        color: white;
-        border-color:rgb(79, 79, 79);
-      }
-      .tweet-preview {
-        background: #f5f5f5;
-        color: black;
-        padding: 10px;
-        border-radius: 4px;
-        margin: 10px 0;
-        font-size: 13px;
-        border-left: 2px solid black;
-      }
-      .tweet-preview strong {
-        color: black;
-      }
-      .response-area {
-        margin-top: 12px;
-        border-top: 1px solid #e5e5e5;
-        padding-top: 12px;
-      }
-      .reply-content {
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 12px;
-        color: black;
-      }
-      .action-buttons {
-        display: flex;
-        gap: 8px;
-      }
-      .action-btn {
-        flex: 1;
-        padding: 8px;
-        border: 1px solid #ccc;
-        background: white;
-        color: black;
-        border-radius: 4px;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-      }
-      .action-btn:hover {
-        background: rgb(34, 34, 34);
-        color: white;
-        border-color:rgb(34, 34, 34);
-      }
-      .close-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: none;
-        border: none;
-        font-size: 20px;
-        cursor: pointer;
-        color: black;
-      }
-      .close-btn:hover {
-        color: rgb(34, 34, 34);
-      }
-    </style>
-    <div class="ai-assistant-overlay">
-      <button class="close-btn">×</button>
-      <h3>Twitter AI Assistant</h3>
+    this.handleClick = this.handleClick.bind(this);
+    this.handleHover = this.handleHover.bind(this);
 
-      <button id="selectTweetBtn" class="btn-primary">Select Tweet</button>
-      <button id="clearBtn" class="btn-secondary">Clear</button>
+    document.addEventListener("click", this.handleClick, true);
+    document.addEventListener("mouseover", this.handleHover, true);
+  },
 
-      <div id="tweetPreview"></div>
+  disable() {
+    State.selectionMode = false;
+    this.removeHighlights();
 
-      <label style="display: block; margin: 15px 0 5px 0; font-size: 14px;">Helper text (optional):</label>
-      <textarea id="helperText" placeholder="Add context for the AI reply..."></textarea>
-
-      <button id="sendBtn" class="btn-primary" disabled>Send to AI</button>
-
-      <div id="response" class="response-area"></div>
-    </div>
-  `;
-
-  shadow.appendChild(wrapper);
-  document.body.appendChild(uiContainer);
-
-  // Get references to the elements
-  const selectBtn = shadow.getElementById("selectTweetBtn");
-  const clearBtn = shadow.getElementById("clearBtn");
-  const sendBtn = shadow.getElementById("sendBtn");
-  const helperText = shadow.getElementById("helperText");
-  const tweetPreview = shadow.getElementById("tweetPreview");
-  const response = shadow.getElementById("response");
-  const closeBtn = shadow.querySelector(".close-btn");
-
-  // Add event listeners
-  closeBtn.addEventListener("click", () => {
-    uiContainer.remove();
-    uiContainer = null;
-    disableTweetSelection();
-  });
-  selectBtn.addEventListener("click", () => {
-    enableTweetSelection();
-    selectBtn.textContent = "Click a tweet...";
-    selectBtn.disabled = true;
-  });
-
-  clearBtn.addEventListener("click", () => {
-    selectedTweet = null;
-    tweetPreview.innerHTML = "";
-    sendBtn.disabled = true;
-    disableTweetSelection();
-    selectBtn.textContent = "Select Tweet";
-    selectBtn.disabled = false;
-    response.innerHTML = "";
-  });
-
-  sendBtn.addEventListener("click", async () => {
-    if (!selectedTweet) return;
-
-    sendBtn.textContent = "Processing...";
-    sendBtn.disabled = true;
-    response.innerHTML = "";
-
-    try {
-      // Get or create user ID (stored in local storage)
-      let userId = localStorage.getItem('twitter_ai_user_id');
-      if (!userId) {
-        userId = 'user_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('twitter_ai_user_id', userId);
-      }
-
-      const res = await fetch("http://localhost:8000/api/analyze_tweet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          tweet_url: selectedTweet.tweet_url,
-          tweet_text: selectedTweet.tweet_text,
-          helper_text: helperText.value
-        })
-      });
-
-      const data = await res.json();
-      currentReply = data.reply;
-
-      // Display reply with action buttons
-      response.innerHTML = `
-        <div class="reply-content">${data.reply}</div>
-        <div class="action-buttons">
-          <button class="action-btn copy-btn">Copy</button>
-          <button class="action-btn reply-btn">Reply</button>
-        </div>
-      `;
-
-      // Copy button
-      response.querySelector('.copy-btn').addEventListener('click', () => {
-        navigator.clipboard.writeText(data.reply);
-        console.log('Reply copied to clipboard');
-      });
-
-      // Reply button
-      response.querySelector('.reply-btn').addEventListener('click', () => {
-        console.log('Reply button clicked');
-      });
-
-    } catch (e) {
-      response.innerHTML = `<strong>Error:</strong> ${e.message}`;
+    if (this.handleClick) {
+      document.removeEventListener("click", this.handleClick, true);
     }
+    if (this.handleHover) {
+      document.removeEventListener("mouseover", this.handleHover, true);
+    }
+  },
+
+  handleClick(e) {
+    if (!State.selectionMode) return;
+
+    const tweet = Utils.findClosestTweet(e.target);
+    if (!tweet) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const tweetText = Utils.extractTweetText(tweet);
+    const tweetUrl = Utils.extractTweetUrl(tweet);
+
+    State.selectedTweet = {
+      articleElement: tweet,
+      tweet_text: tweetText,
+      tweet_url: tweetUrl
+    };
+
+    UI.updateTweetPreview(tweetText);
+    this.disable();
+  },
+
+  handleHover(e) {
+    if (!State.selectionMode) return;
+
+    const tweet = Utils.findClosestTweet(e.target);
+    if (tweet) {
+      tweet.style.outline = "3px solid #1d9bf0";
+    }
+  },
+
+  highlightTweets() {
+    const tweets = document.querySelectorAll("article");
+    tweets.forEach((tweet) => {
+      tweet.style.outline = "2px solid rgba(29,155,240,0.4)";
+      tweet.style.cursor = "pointer";
+    });
+  },
+
+  removeHighlights() {
+    const tweets = document.querySelectorAll("article");
+    tweets.forEach((tweet) => {
+      tweet.style.outline = "";
+      tweet.style.cursor = "";
+    });
+  }
+};
+
+// ========================================
+// Reply Module
+// ========================================
+const Reply = {
+  async openDialogAndFill(replyText) {
+    console.log('Reply.openDialogAndFill called with:', replyText?.substring(0, 50));
+
+    if (!State.selectedTweet?.articleElement) {
+      Notification.show('No tweet selected. Please select a tweet first.');
+      return;
+    }
+
+    // Find the reply button within the selected tweet
+    const replyBtn = State.selectedTweet.articleElement.querySelector('[data-testid="reply"]');
+    console.log('Reply button found:', !!replyBtn);
+
+    if (!replyBtn) {
+      Notification.show('Could not find reply button. Try refreshing the page.');
+      return;
+    }
+
+    // Copy to clipboard as backup
+    await navigator.clipboard.writeText(replyText);
+
+    // Click the reply button to open Twitter's native dialog
+    replyBtn.click();
+
+    // Wait for the dialog to appear and text area to be ready
+    const result = await this.waitForDialogAndTextArea();
+    if (!result) {
+      Notification.show('Reply dialog not found. Text copied to clipboard.');
+      return;
+    }
+
+    const { textArea } = result;
+    console.log('Dialog and text area found, filling text...');
+
+    // Focus and click the text area first to ensure it's ready
+    textArea.focus();
+    textArea.click();
+
+    // Small delay to ensure React has processed the focus
+    await Utils.sleep(200);
+
+    // Try paste approach (most reliable for Twitter's React)
+    const success = await this.tryPaste(textArea, replyText);
+    console.log('Text fill success:', success);
+
+    if (success) {
+      Notification.show('Reply filled! Click Send to post.');
+    } else {
+      Notification.show('Could not fill text. Text copied to clipboard.');
+    }
+  },
+
+  async waitForDialog(maxWait = 5000) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWait) {
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+      for (const dialog of dialogs) {
+        const rect = dialog.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          console.log('Dialog found:', rect);
+          return dialog;
+        }
+      }
+      await Utils.sleep(50);
+    }
+
+    console.log('Dialog not found after timeout');
+    return null;
+  },
+
+  async waitForDialogAndTextArea(maxWait = 5000) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWait) {
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+
+      for (const dialog of dialogs) {
+        const rect = dialog.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          // Dialog is visible, now look for text area
+          const textArea = this.findTextAreaInDialog(dialog);
+          if (textArea) {
+            console.log('Found dialog and text area');
+            return { dialog, textArea };
+          }
+        }
+      }
+      await Utils.sleep(50);
+    }
+
+    console.log('Dialog or text area not found after timeout');
+    return null;
+  },
+
+  findTextAreaInDialog(dialog) {
+    const selectors = [
+      '[data-testid="tweetTextarea_0"]',
+      '[data-testid="tweetTextarea"]',
+      'div[contenteditable="true"][aria-label]',
+      'div[contenteditable="true"]'
+    ];
+
+    for (const selector of selectors) {
+      const elements = dialog.querySelectorAll(selector);
+      for (const element of elements) {
+        // Make sure the element is visible and has reasonable size
+        const rect = element.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          console.log('Found text area with selector:', selector);
+          return element;
+        }
+      }
+    }
+
+    return null;
+  },
+
+  async tryPaste(element, text) {
+    // First, copy text to clipboard
+    await navigator.clipboard.writeText(text);
+
+    // Try to trigger a paste event
+    try {
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: new DataTransfer()
+      });
+      pasteEvent.clipboardData.setData('text/plain', text);
+      element.dispatchEvent(pasteEvent);
+    } catch (e) {
+      console.log('ClipboardEvent failed:', e);
+    }
+
+    // Also try direct text insertion as fallback
+    await Utils.pasteTextIntoEditable(element, text);
+
+    // Check if text was inserted
+    await Utils.sleep(100);
+    const content = element.textContent || element.innerText || '';
+    return content.includes(text) || text.includes(content.trim());
+  }
+};
+
+// ========================================
+// UI Module
+// ========================================
+const UI = {
+  create() {
+    State.uiContainer = document.createElement("div");
+    const shadow = State.uiContainer.attachShadow({ mode: "open" });
+
+    // Load CSS
+    loadCSS(shadow);
+
+    // Create HTML structure
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `
+      <div class="ai-assistant-overlay">
+        <button class="close-btn">×</button>
+        <h3>Twitter AI Assistant</h3>
+        <button id="selectTweetBtn" class="btn-primary">Select Tweet</button>
+        <button id="clearBtn" class="btn-secondary">Clear</button>
+        <div id="tweetPreview"></div>
+        <label>Helper text (optional):</label>
+        <textarea id="helperText" placeholder="Add context for the AI reply..."></textarea>
+        <button id="sendBtn" class="btn-primary" disabled>Send to AI</button>
+        <div id="response" class="response-area"></div>
+      </div>
+    `;
+    shadow.appendChild(wrapper);
+
+    document.body.appendChild(State.uiContainer);
+
+    this.attachEventListeners(shadow);
+  },
+
+  attachEventListeners(shadow) {
+    const closeBtn = shadow.querySelector(".close-btn");
+    const selectBtn = shadow.getElementById("selectTweetBtn");
+    const clearBtn = shadow.getElementById("clearBtn");
+    const sendBtn = shadow.getElementById("sendBtn");
+    const helperText = shadow.getElementById("helperText");
+    const response = shadow.getElementById("response");
+
+    closeBtn.addEventListener("click", () => this.close());
+
+    selectBtn.addEventListener("click", () => {
+      TweetSelection.enable();
+      selectBtn.textContent = "Click a tweet...";
+      selectBtn.disabled = true;
+    });
+
+    clearBtn.addEventListener("click", () => this.clearSelection());
+
+    sendBtn.addEventListener("click", async () => {
+      if (!State.selectedTweet) return;
+
+      sendBtn.textContent = "Processing...";
+      sendBtn.disabled = true;
+      response.innerHTML = "";
+
+      try {
+        await this.sendToAI(helperText.value, response, sendBtn);
+      } catch (e) {
+        response.innerHTML = `<strong>Error:</strong> ${e.message}`;
+        sendBtn.textContent = "Send to AI";
+        sendBtn.disabled = false;
+      }
+    });
+  },
+
+  async sendToAI(helperText, responseContainer, sendBtn) {
+    // Get or create user ID
+    let userId = localStorage.getItem('twitter_ai_user_id');
+    if (!userId) {
+      userId = 'user_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('twitter_ai_user_id', userId);
+    }
+
+    const res = await fetch("http://localhost:8000/api/analyze_tweet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        tweet_url: State.selectedTweet.tweet_url,
+        tweet_text: State.selectedTweet.tweet_text,
+        helper_text: helperText
+      })
+    });
+
+    const data = await res.json();
+    State.currentReply = data.reply;
+
+    this.displayResponse(responseContainer, data.reply);
 
     sendBtn.textContent = "Send to AI";
     sendBtn.disabled = false;
-  });
+  },
 
-  // Listen for close event
-  document.addEventListener(
-    "closeUI",
-    () => {
-      uiContainer = null;
-      disableTweetSelection();
-    },
-    { once: true }
-  );
-}
+  displayResponse(container, replyText) {
+    container.innerHTML = `
+      <div class="reply-content">${replyText}</div>
+      <div class="action-buttons">
+        <button class="action-btn copy-btn">Copy</button>
+        <button class="action-btn reply-btn">Reply</button>
+      </div>
+    `;
 
-function enableTweetSelection() {
-  selectionMode = true;
-  highlightTweets();
+    container.querySelector('.copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(replyText);
+      Notification.show('Reply copied to clipboard');
+    });
 
-  document.addEventListener("click", handleTweetClick, true);
-  document.addEventListener("mouseover", handleTweetHover, true);
-}
+    container.querySelector('.reply-btn').addEventListener('click', async () => {
+      await Reply.openDialogAndFill(replyText);
+    });
+  },
 
-function disableTweetSelection() {
-  selectionMode = false;
-  removeHighlights();
+  updateTweetPreview(tweetText) {
+    const shadow = State.uiContainer?.shadowRoot;
+    if (!shadow) return;
 
-  document.removeEventListener("click", handleTweetClick, true);
-  document.removeEventListener("mouseover", handleTweetHover, true);
-}
+    const selectBtn = shadow.getElementById("selectTweetBtn");
+    const tweetPreview = shadow.getElementById("tweetPreview");
+    const sendBtn = shadow.getElementById("sendBtn");
 
-function handleTweetClick(e) {
-  if (!selectionMode) return;
+    selectBtn.textContent = "Select Tweet";
+    selectBtn.disabled = false;
 
-  const tweet = findClosestTweet(e.target);
-  if (!tweet) return;
+    tweetPreview.innerHTML = `
+      <div class="tweet-preview">
+        <strong>Selected Tweet:</strong><br>
+        ${this.escapeHtml(tweetText.substring(0, 200))}${tweetText.length > 200 ? "..." : ""}
+      </div>
+    `;
 
-  e.preventDefault();
-  e.stopPropagation();
+    sendBtn.disabled = false;
+  },
 
-  const tweetText = extractTweetText(tweet);
-  const tweetUrl = extractTweetUrl(tweet);
+  clearSelection() {
+    State.selectedTweet = null;
 
-  selectedTweet = {
-    tweet_text: tweetText,
-    tweet_url: tweetUrl
-  };
+    const shadow = State.uiContainer?.shadowRoot;
+    if (!shadow) return;
 
-  // Update the UI
-  const shadow = uiContainer.shadowRoot;
-  const selectBtn = shadow.getElementById("selectTweetBtn");
-  const tweetPreview = shadow.getElementById("tweetPreview");
-  const sendBtn = shadow.getElementById("sendBtn");
+    const selectBtn = shadow.getElementById("selectTweetBtn");
+    const tweetPreview = shadow.getElementById("tweetPreview");
+    const sendBtn = shadow.getElementById("sendBtn");
+    const response = shadow.getElementById("response");
 
-  selectBtn.textContent = "Select Tweet";
-  selectBtn.disabled = false;
+    tweetPreview.innerHTML = "";
+    sendBtn.disabled = true;
+    selectBtn.textContent = "Select Tweet";
+    selectBtn.disabled = false;
+    response.innerHTML = "";
 
-  tweetPreview.innerHTML = `
-    <div class="tweet-preview">
-      <strong>Selected Tweet:</strong><br>
-      ${tweetText.substring(0, 200)}${tweetText.length > 200 ? "..." : ""}
-    </div>
-  `;
+    TweetSelection.disable();
+  },
 
-  sendBtn.disabled = false;
+  close() {
+    if (State.uiContainer) {
+      State.uiContainer.remove();
+      State.uiContainer = null;
+      TweetSelection.disable();
+    }
+  },
 
-  disableTweetSelection();
-}
-
-function handleTweetHover(e) {
-  if (!selectionMode) return;
-
-  const tweet = findClosestTweet(e.target);
-  if (tweet) {
-    tweet.style.outline = "3px solid #1d9bf0";
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
-}
+};
 
-function findClosestTweet(el) {
-  return el.closest("article");
-}
-
-function extractTweetText(article) {
-  // The actual tweet text is in a div with data-testid="tweetText"
-  const tweetTextDiv = article.querySelector("[data-testid='tweetText']");
-  if (tweetTextDiv) {
-    // Use textContent to get just the text, not innerText which includes more
-    return tweetTextDiv.textContent.trim();
+// ========================================
+// Message Listener
+// ========================================
+chrome.runtime.onMessage.addListener((msg) => {
+  console.log("Received message:", msg);
+  if (msg.action === "toggle_ui") {
+    if (State.uiContainer) {
+      UI.close();
+    } else {
+      UI.create();
+    }
   }
-
-  // Fallback: try to find the main tweet container
-  const tweetText = article.querySelector("[data-testid='tweet'] div[lang]");
-  if (tweetText) {
-    return tweetText.textContent.trim();
-  }
-
-  return "";
-}
-
-function extractTweetUrl(article) {
-  const anchor = article.querySelector("a[href*='/status/']");
-  return anchor ? anchor.href : null;
-}
-
-function highlightTweets() {
-  const tweets = document.querySelectorAll("article");
-  tweets.forEach((tweet) => {
-    tweet.style.outline = "2px solid rgba(29,155,240,0.4)";
-    tweet.style.cursor = "pointer";
-  });
-}
-
-function removeHighlights() {
-  const tweets = document.querySelectorAll("article");
-  tweets.forEach((tweet) => {
-    tweet.style.outline = "";
-    tweet.style.cursor = "";
-  });
-}
+});

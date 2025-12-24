@@ -21,7 +21,9 @@ TWEET_GENERATION_EXAMPLES = [
 ]
 
 
-def get_tweet_generation_prompt(tweet_text: str, helper_text: str = None, style_hints: str = "") -> str:
+def get_tweet_generation_prompt(
+    tweet_text: str, helper_text: str = None, style_hints: str = ""
+) -> str:
     """
     Build the prompt for tweet reply generation.
 
@@ -67,6 +69,7 @@ def get_tweet_generation_prompt(tweet_text: str, helper_text: str = None, style_
     - skip punctuation sometimes
     - aren't overly formal or corporate
     - don't over-explain but also don't be empty
+    - Never end in small questions without meaning like "what do you think?" or "do you agree?" or "you know" 
 
     One or two sentences max. Make it count.
     Answer in the same language as the tweet.
@@ -152,10 +155,7 @@ No other text, no markdown formatting, just the JSON."""
 
 
 def get_qa_scoring_prompt(
-    scoring_system_prompt: str,
-    question: str,
-    answer: str,
-    examples: str = ""
+    scoring_system_prompt: str, question: str, answer: str, examples: str = ""
 ) -> str:
     """
     Build the prompt for scoring a QA pair.
@@ -169,11 +169,15 @@ def get_qa_scoring_prompt(
     Returns:
         Formatted prompt string
     """
-    examples_section = f"""
+    examples_section = (
+        f"""
 
 REFERENCE EXAMPLES:
 {examples}
-""" if examples else ""
+"""
+        if examples
+        else ""
+    )
 
     return f"""{scoring_system_prompt}
 
