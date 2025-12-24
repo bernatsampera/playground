@@ -104,7 +104,6 @@ def analyze(payload: TweetPayload):
         tweet_text=payload.tweet_text,
         helper_text=helper_text_section,
         style_hints=style_hints,
-        examples_str=prompts.TWEET_GENERATION_EXAMPLES_STR,
     )
     print("💬 Prompt:", prompt)
 

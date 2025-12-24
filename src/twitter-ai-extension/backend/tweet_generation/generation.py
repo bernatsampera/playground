@@ -84,7 +84,7 @@ def clean_content(
 
         # Check if any forbidden words remain
         remaining = get_forbidden_words_in_content(cleaned)
-        if remaining:
+        if remaining and max_iterations > 1:
             # If AI failed to remove all, retry (max 2 tries total)
             print(f"Retry: Still has forbidden words: {remaining}")
             return clean_content(cleaned, max_iterations - 1)

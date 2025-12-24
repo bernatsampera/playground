@@ -51,7 +51,6 @@ def main():
             tweet_text=tweet_text,
             helper_text="",
             style_hints="",
-            examples_str=prompts.TWEET_GENERATION_EXAMPLES_STR,
         )
 
         # Get model with appropriate temperature

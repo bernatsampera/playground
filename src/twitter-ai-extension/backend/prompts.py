@@ -9,19 +9,6 @@ organized by functionality for easy maintenance.
 # TWEET GENERATION PROMPTS
 # =============================================================================
 
-TWEET_GENERATION_EXAMPLES = [
-    "wild. didnt know that",
-    "same thing happened to me last week",
-    "fair point actually",
-    "true but also what if...",
-    "no way this is real",
-    "preach",
-    "thats actually a great point about",
-    "ive noticed that too",
-]
-
-TWEET_GENERATION_EXAMPLES_STR = "\n".join(f"- {ex}" for ex in TWEET_GENERATION_EXAMPLES)
-
 TWEET_GENERATION_PROMPT = """<task>
 Reply to this tweet naturally, like how people actually talk on Twitter.
 </task>
@@ -31,11 +18,6 @@ Tweet: {tweet_text}
 {helper_text}
 {style_hints}
 </input>
-
-<examples>
-Examples of natural Twitter replies:
-{examples_str}
-</examples>
 
 <rules>
 <forbidden_patterns>
@@ -113,57 +95,57 @@ BE EXTREMELY STINGY WITH HIGH SCORES. Most answers are mediocre and should score
 <scoring_criteria>
 <score_1_0>
 <level>Perfect - RARE</level>
-- Detailed, substantive analysis with concrete examples
-- Multi-paragraph breakdown with specific comparisons
-- Directly answers with valuable insights, not just agreement
-- Zero filler, zero bland positivity
+- Strong take with personality: contrarian, challenging, or hyperbolic
+- Concrete example or personal experience shared
+- Direct engagement with the tweet's content
+- Zero filler, zero bland agreement
+- Matches the tweet's language
 </score_1_0>
 
 <score_0_7_0_9>
 <level>Good - UNCOMMON</level>
-- Engages meaningfully with specific content
-- Some substance beyond mere agreement
-- Not just "so true" or "totally"
-- Might be brief but actually says something of value
+- Has a take or opinion, not just agreement
+- Adds some value beyond echoing sentiment
+- Might be brief but actually says something
+- Human-sounding tone
 </score_0_7_0_9>
 
 <score_0_3_0_6>
 <level>Mediocre - MOST COMMON</level>
-- "seriously so true", "totally forgot", "yeah" = generic filler
-- "so important", "gotta ship it" = bland encouragement
-- Generic agreement without adding new information
-- Short responses that just echo the sentiment
-- "wow", "oh", "oooh" = empty reactions
+- "so true", "totally", "yeah", "same" = generic agreement
+- "that sucks", "sorry to hear" = empty sympathy
+- Generic advice without substance
+- Being overly polite/PC when edge would be better
+- Just echoing the tweet's sentiment
 </score_0_3_0_6>
 
 <score_0_1_0_3>
 <level>Poor</level>
 - Wrong language (English response to non-English tweet)
-- Multiple emojis (especially 💯 ✨ 👀 😅)
-- AI-sounding phrases: "leverage play", "feels like", "tough one"
-- "lol so relatable", "ngl", "deadass" = lazy filler
-- "damn", "ugh" = low-effort reactions
+- Emojis: 💯 ✨ 👀 😅
+- AI-sounding: "honestly", "basically", "actually", "probably", "maybe"
+- Corporate: "furthermore", "leverage", "utilize"
+- Empty reactions: "damn", "ugh", "wow", "oooh"
 - Completely irrelevant or nonsensical
 </score_0_1_0_3>
 </scoring_criteria>
 
 <immediate_0_3_patterns>
-IMMEDIATE 0.3 SCORE FOR THESE PATTERNS:
-- "so true" / "seriously so true" / "yesss so true" → DULL BLAND AGREEMENT
-- "totally forgot" / "so important" → POSITIVE MESSAGE WITHOUT VALUE
-- "lol so relatable" → LOW VALUE
-- "wow" / "oooh" → EMPTY REACTION
-- Emojis like 💯 ✨ 👀 😅 → UNPROFESSIONAL
+IMMEDIATE 0.3 SCORE FOR:
+- "so true" / "seriously so true" / "totally" / "same"
+- "lol so relatable"
+- "that sucks, sorry to hear" or generic sympathy
+- Emojis like 💯 ✨ 👀 😅
+- Non-committal: "probably", "maybe"
 </immediate_0_3_patterns>
 
-<edge_cases>
-ANSWER THAT PROVIDES A SOLUTION BUT IT'S NOT GOOD:
-- If someone asks what stack to use and answer is "probably python + flask 😅"
-- This is a 0.3 - it's vague, has emoji, non-committal
-</edge_cases>
+<what_we_want>
+REWARD: Hot takes, contrarian views, challenging the OP, hyperbole ("wild", "insane", "criminal"), concrete examples, calling things out directly, having actual opinions
+PENALIZE: Being neutral, safe, overly polite, generic agreement, empty positivity
+</what_we_want>
 
 <critical_reminder>
-CRITICAL: Be harsh. Default to 0.3 unless the answer clearly demonstrates substance.
+CRITICAL: Be harsh. Default to 0.3 unless the answer has a real take or adds genuine value.
 </critical_reminder>
 
 <output_format>
