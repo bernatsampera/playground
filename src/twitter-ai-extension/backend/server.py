@@ -1,20 +1,18 @@
 import json
-import re
 import uuid
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
-from all_forbidden_words import forbidden_words
+import prompts
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel
-from quality_scorer import ReplyScorer
-from user_profile import UserProfile
+from tweet_generation import ReplyScorer, UserProfile
+from tweet_generation.generation import clean_content, get_model_for_context
 
 # Path to store Q&A history
-QA_HISTORY_PATH = Path("qa_history.json")
+QA_HISTORY_PATH = Path("data/qa_history.json")
 
 app = FastAPI()
 
@@ -41,22 +39,6 @@ class FeedbackPayload(BaseModel):
     feedback: str  # "good", "bad", "too_formal", "too_casual"
 
 
-def get_model_for_context(tweet_text: str) -> ChatOllama:
-    """Dynamic temperature based on context and expected reply length"""
-    # Shorter, more casual replies need higher temperature for creativity
-    # Longer, more thoughtful replies can use lower temperature
-
-    # Estimate expected reply length based on tweet
-    if len(tweet_text) < 100:  # Short tweet
-        temp = 0.9  # More creative, varied responses
-    elif len(tweet_text) < 200:  # Medium tweet
-        temp = 0.8
-    else:  # Long tweet
-        temp = 0.7  # More focused responses
-
-    return ChatOllama(model="gemma3:12b", temperature=temp)
-
-
 # Default model instance
 model = ChatOllama(model="gemma3:12b", temperature=0.7)
 
@@ -78,14 +60,13 @@ def load_qa_history() -> dict:
     return {}
 
 
-def save_qa_entry(question_id: str, question_text: str, answer_text: str, tweet_url: str, user_id: str) -> None:
+def save_qa_entry(
+    question_id: str, question_text: str, answer_text: str, tweet_url: str, user_id: str
+) -> None:
     """Save a Q&A entry to the JSON history file"""
     history = load_qa_history()
 
-    history[question_id] = {
-        "question": question_text,
-        "answer": answer_text
-    }
+    history[question_id] = {"question": question_text, "answer": answer_text}
 
     with open(QA_HISTORY_PATH, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2, ensure_ascii=False)
@@ -117,34 +98,11 @@ def analyze(payload: TweetPayload):
     # Get style hints from user profile
     style_hints = user_profile.get_style_prompt_addition()
 
-    prompt = f"""
-    Reply to this tweet naturally, like how people actually talk on Twitter:
-
-    Tweet: {payload.tweet_text}
-    {"Additional context: " + payload.helper_text if payload.helper_text else ""}
-    {style_hints}
-
-    Examples of natural Twitter replies:
-    - "this is exactly what i mean lol"
-    - "wild. didnt know that"
-    - "same thing happened to me last week"
-    - "honestly? fair point"
-    - "true but also what if..."
-    - "im dying at this"
-    - "no way this is real"
-    - "preach"
-
-    Keep it short and authentic. People on Twitter:
-    - type quickly, not perfectly
-    - use lowercase mostly
-    - skip punctuation sometimes
-    - aren't overly formal or corporate
-    - don't over-explain
-    - do not use lol, tbh...
-
-    Just reply like you're talking to a friend. One or two sentences max.
-    Answer in the same language as the tweet.
-    """
+    prompt = prompts.get_tweet_generation_prompt(
+        tweet_text=payload.tweet_text,
+        helper_text=payload.helper_text,
+        style_hints=style_hints,
+    )
     print("💬 Prompt:", prompt)
 
     ai = context_model.invoke(prompt)
@@ -165,7 +123,7 @@ def analyze(payload: TweetPayload):
         question_text=question_text,
         answer_text=cleaned_reply,
         tweet_url=payload.tweet_url,
-        user_id=payload.user_id
+        user_id=payload.user_id,
     )
     print(f"💾 Saved Q&A entry with ID: {question_id}")
 
@@ -203,90 +161,3 @@ def handle_feedback(payload: FeedbackPayload):
         user_profile.capitalization_style = "casual"
 
     return {"status": "updated", "profile_samples": user_profile.samples_analyzed}
-
-
-MAX_FORBIDDEN_WORDS_ITERATIONS = 3
-
-
-def get_forbidden_words_in_content(content: str) -> list[str]:
-    """
-    Returns a list of forbidden words found in the content.
-    """
-    forbidden_words_in_content = []
-
-    for word in forbidden_words:
-        # If the word is only punctuation/symbols, check direct presence
-        if re.match(r"^[^\w\s]+$", word):
-            if word in content:
-                forbidden_words_in_content.append(word)
-        else:
-            # Whole-word match, plural allowed
-            pattern = r"\b" + re.escape(word) + r"s?\b"
-            if re.search(pattern, content, re.IGNORECASE):
-                forbidden_words_in_content.append(word)
-
-    return forbidden_words_in_content
-
-
-def clean_content(
-    content: str, max_iterations: int = MAX_FORBIDDEN_WORDS_ITERATIONS
-) -> str:
-    """
-    Cleans AI-sounding words from content using AI to find better replacements.
-    """
-
-    # First pass: Check for forbidden words
-    found = get_forbidden_words_in_content(content)
-
-    if not found:
-        # Just clean up the dashes and return
-        content = content.replace(" — ", ", ")
-        content = content.replace(" – ", ", ")
-        return content
-
-    # Use AI to find natural replacements for forbidden words
-    replacement_model = ChatOllama(model="llama3.1", temperature=0.8)
-
-    forbidden_list = ", ".join(found)
-
-    replacement_prompt = f"""
-Replace these AI/corporate words in this Twitter reply with natural, casual alternatives:
-
-Original reply: "{content}"
-
-Forbidden words to replace: {forbidden_list}
-
-Rules:
-- Keep the meaning the same
-- Use casual, natural language people actually use on Twitter
-- Don't make it longer
-- Don't add emojis if they weren't there
-- Match the same casual tone
-- Keep it sounding authentic
-
-Return only the modified reply, nothing else.
-"""
-
-    try:
-        ai_response = replacement_model.invoke(replacement_prompt)
-        cleaned = ai_response.content.strip()
-
-        # Clean up any remaining AI-ish dashes
-        cleaned = cleaned.replace(" — ", ", ")
-        cleaned = cleaned.replace(" – ", ", ")
-
-        # Check if any forbidden words remain
-        remaining = get_forbidden_words_in_content(cleaned)
-        if remaining:
-            # If AI failed to remove all, retry once
-            print(f"Retry: Still has forbidden words: {remaining}")
-            return clean_content(cleaned, max_iterations - 1)
-
-        return cleaned
-
-    except Exception as e:
-        print(f"Error in AI replacement: {e}")
-        # If AI fails, just clean dashes and return original
-        content = content.replace(" — ", ", ")
-        content = content.replace(" – ", ", ")
-        return content

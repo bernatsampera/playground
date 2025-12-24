@@ -11,65 +11,14 @@ from typing import Dict, List, Optional, Tuple
 
 from langchain_ollama import ChatOllama
 
+# Import prompts from parent directory module
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import prompts
+
 
 class ConfidenceScorer:
     """Scores QA pairs using LLM-based analysis of historical patterns"""
-
-    # The system prompt that defines scoring criteria
-    SCORING_SYSTEM_PROMPT = """You are a strict Twitter reply quality evaluator. Your task is to analyze question-answer pairs and assign a confidence score from 0.0 to 1.0 with reasoning.
-
-BE EXTREMELY STINGY WITH HIGH SCORES. Most answers are mediocre and should score 0.3 or lower.
-
-SCORING CRITERIA:
-
-Score 1.0 (Perfect - RARE):
-- Detailed, substantive analysis with concrete examples
-- Multi-paragraph breakdown with specific comparisons
-- Directly answers with valuable insights, not just agreement
-- Zero filler, zero bland positivity
-
-Score 0.7-0.9 (Good - UNCOMMON):
-- Engages meaningfully with specific content
-- Some substance beyond mere agreement
-- Not just "so true" or "totally"
-- Might be brief but actually says something of value
-
-Score 0.3-0.6 (Mediocre - MOST COMMON):
-- "seriously so true", "totally forgot", "yeah" = generic filler
-- "so important", "gotta ship it" = bland encouragement
-- Generic agreement without adding new information
-- Short responses that just echo the sentiment
-- "wow", "oh", "oooh" = empty reactions
-
-Score 0.1-0.3 (Poor):
-- Wrong language (English response to non-English tweet)
-- Multiple emojis (especially 💯 ✨ 👀 😅)
-- AI-sounding phrases: "leverage play", "feels like", "tough one"
-- "lol so relatable", "ngl", "deadass" = lazy filler
-- "damn", "ugh" = low-effort reactions
-- Completely irrelevant or nonsensical
-
-IMMEDIATE 0.3 SCORE FOR THESE PATTERNS:
-- "so true" / "seriously so true" / "yesss so true" → DULL BLAND AGREEMENT
-- "totally forgot" / "so important" → POSITIVE MESSAGE WITHOUT VALUE
-- "lol so relatable" → LOW VALUE
-- "wow" / "oooh" → EMPTY REACTION
-- Emojis like 💯 ✨ 👀 😅 → UNPROFESSIONAL
-
-ANSWER THAT PROVIDES A SOLUTION BUT IT'S NOT GOOD:
-- If someone asks what stack to use and answer is "probably python + flask 😅"
-- This is a 0.3 - it's vague, has emoji, non-committal
-
-CRITICAL: Be harsh. Default to 0.3 unless the answer clearly demonstrates substance.
-
-OUTPUT FORMAT:
-Return ONLY a JSON object with this exact structure:
-{
-  "score": <float between 0.0 and 1.0>,
-  "reason": "<brief explanation of the score>"
-}
-
-No other text, no markdown formatting, just the JSON."""
 
     def __init__(self, scored_history_path: Optional[str] = None):
         """
@@ -77,12 +26,12 @@ No other text, no markdown formatting, just the JSON."""
 
         Args:
             scored_history_path: Path to scored_history.json file. If None,
-                uses the default path relative to this file.
+                uses the default path in the data/ folder.
         """
         if scored_history_path is None:
-            scored_history_path = os.path.join(
-                os.path.dirname(__file__), "scored_history.json"
-            )
+            # Path to data/ folder (sibling to confidence/ folder)
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            scored_history_path = os.path.join(base_dir, "data", "scored_history.json")
 
         self.scored_history_path = scored_history_path
         self.model = ChatOllama(model="gemma3:12b", temperature=0.3)
@@ -142,18 +91,12 @@ Reason: {entry.get("reason", "N/A")}"""
         """
         examples = self._load_historical_examples() if use_few_shot else ""
 
-        prompt = f"""{self.SCORING_SYSTEM_PROMPT}
-
-Question: {question}
-Answer: {answer}
-
-{f'''
-
-REFERENCE EXAMPLES:
-{examples}
-''' if examples else ""}
-
-Now analyze the above question-answer pair and return ONLY a JSON object with "score" (float 0.0-1.0) and "reason" (string)."""
+        prompt = prompts.get_qa_scoring_prompt(
+            scoring_system_prompt=prompts.CONFIDENCE_SCORING_SYSTEM_PROMPT,
+            question=question,
+            answer=answer,
+            examples=examples
+        )
 
         try:
             response = self.model.invoke(prompt)
@@ -241,7 +184,9 @@ Now analyze the above question-answer pair and return ONLY a JSON object with "s
             Dictionary mapping IDs to {score, reason, question, answer}
         """
         if qa_history_path is None:
-            qa_history_path = os.path.join(os.path.dirname(__file__), "qa_history.json")
+            # Path to data/ folder (sibling to confidence/ folder)
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            qa_history_path = os.path.join(base_dir, "data", "qa_history.json")
 
         with open(qa_history_path, "r", encoding="utf-8") as f:
             qa_data = json.load(f)
