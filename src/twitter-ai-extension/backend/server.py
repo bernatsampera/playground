@@ -98,10 +98,13 @@ def analyze(payload: TweetPayload):
     # Get style hints from user profile
     style_hints = user_profile.get_style_prompt_addition()
 
-    prompt = prompts.get_tweet_generation_prompt(
+    # Build the prompt
+    helper_text_section = f"Additional context: {payload.helper_text}" if payload.helper_text else ""
+    prompt = prompts.TWEET_GENERATION_PROMPT.format(
         tweet_text=payload.tweet_text,
-        helper_text=payload.helper_text,
+        helper_text=helper_text_section,
         style_hints=style_hints,
+        examples_str=prompts.TWEET_GENERATION_EXAMPLES_STR,
     )
     print("💬 Prompt:", prompt)
 

@@ -13,59 +13,17 @@
             "score": 0.4,
             "reason": "The answer acknowledges the correction and highlights the importance of accurate information dissemination. While it's a positive sentiment, it lacks depth and doesn't offer any specific analysis of why the incorrect information was spread or its potential consequences. It's a basic agreement rather than a substantive contribution."
         },
-        "d78f99f0-2878-4f6c-8c41-df938c0618a1": {
-            "question": "Tweet: Building in public at 11 users?\n\nYou're not wasting time.\nYou're building the audience.\nYou're building the system.\nYou're building the flywheel.\n\nThe founders who quit at 11 users don't realize they were weeks away from compounding kicking in.\n\nBoth product AND audience.",
-            "answer": "seriously so true. so many people give up too early.",
-            "score": 0.3,
-            "reason": "The answer 'seriously so true. so many people give up too early.' is a generic agreement that adds no new information or insight. It's a common, bland response that echoes the sentiment of the original tweet without offering any value."
-        },
-        "8195d366-8462-4f12-a2b3-0a63e1502947": {
-            "question": "Tweet: If you had to build an MVP in just 1 week.\n\nwhat stack would you use?",
-            "answer": "probably something super basic like python + flask or maybe even just straight up html/css/js depending on what it is 😅",
-            "score": 0.3,
-            "reason": "The answer suggests a basic stack (Python/Flask or HTML/CSS/JS) without considering the one-week timeframe or specific MVP requirements. The inclusion of an emoji further diminishes the response's value, making it a generic and unhelpful suggestion."
-        },
-        "f2f00fb8-c3ff-4b09-91a8-952b54394e4f": {
-            "question": "Tweet: Building in public isn't about impressing people.\n\nIt's about staying accountable.\n\nTo the work.\n\nTo yourself.",
-            "answer": "yeah, totally forgot about the accountability part. so important 💯",
-            "score": 0.3,
-            "reason": "The answer uses the phrase 'yeah, totally forgot' and 'so important', which are generic expressions of agreement that add no new information or value. The inclusion of the emoji further diminishes the response's substance."
-        },
-        "c538ffaf-2865-4661-8c3e-cc3ca67062db": {
-            "question": "Tweet: quiz: you have $10k budget and 3 months to 2x revenue\n\nwhat do you spend it on:\n\nA) hire 2 sdrs\nB) build automation workflows\nC) run paid ads\nD) hire growth consultant\n\nreply with your answer. i'll tell you which one actually worked for us (and why the others failed)",
-            "answer": "oooh, tough one. i'm gonna guess b) build automation workflows - feels like a leverage play. 👀",
-            "score": 0.3,
-            "reason": "The answer uses filler phrases like 'oooh, tough one' and 'feels like a leverage play,' along with an emoji, indicating a lack of substantive engagement. It offers a guess but doesn't demonstrate any deep understanding or provide a well-reasoned argument."
-        },
-        "324ae42d-c2e5-41bb-9f1d-ea007e50d33b": {
-            "question": "Tweet: Transparency compounds faster than perfection.\n\nShip messy.\nWin anyway.",
-            "answer": "yesss so true. gotta ship it, learn from it, repeat ✨",
-            "score": 0.3,
-            "reason": "The answer is a generic agreement using filler phrases like 'yesss so true' and 'gotta ship it'. The inclusion of a sparkle emoji further reduces the value of the response, indicating a lack of substantive engagement with the original tweet."
-        },
-        "70580fa1-65e8-434b-bb6b-fa5966e7e54b": {
-            "question": "Tweet: I heard this from a founder recently:\n\"Features attract logic, emotion drives adoption.\n\nAnd I couldn't agree more.\n\nI see other founders who think \n\n> Adding a new feature\n> Creating beautiful UI/UX\n> Engaging in consistency challenges\n\nIs the best thing you can do to gain",
-            "answer": "seriously so true. it's always the *feeling* that keeps people coming back.",
-            "score": 0.3,
-            "reason": "The answer is a generic agreement ('seriously so true') that adds no new information or insightful perspective. It's a common, bland response that echoes the sentiment of the original tweet without offering any value."
-        },
-        "ac6c9844-314f-463b-8b30-714109a447e1": {
-            "question": "Tweet: Year 1 of building Nexy: I took notes in every meeting like my life depended on it.\n\nYear 2: I realized I never looked at those notes.\nYear 3: I understood why.\n\nNotes are snapshots. But conversations are alive, they connect, evolve, and build on each other.\n\nWe weren't trying to",
-            "answer": "lol so relatable. i do that with so many things.",
-            "score": 0.2,
-            "reason": "The answer uses 'lol so relatable,' which is a low-value, generic filler phrase indicating a lack of meaningful engagement with the content of the tweet. It offers no new information or insightful perspective."
-        },
-        "9e6815df-80c5-4bf5-bd64-ee46cb61d717": {
-            "question": "Tweet: nexxel nexxel  @nexxeln · my favourite software of 2025 \n\n- opencode\n- linear\n- nvim\n- bun\n- raycast (both on mac and ios)\n- letterboxd\n- better auth\n- ami\n- postgres\n- effect 21 21 21 3 3 3 298 298 298 12K 12K 12K",
-            "answer": "wow, that's a packed list! linear and bun are solid picks ngl. ✨",
-            "score": 0.3,
-            "reason": "The answer is a generic reaction ('wow, that's a packed list!') followed by a brief, unsubstantiated endorsement of two items ('linear and bun are solid picks'). The use of 'ngl' and a sparkle emoji further reduces the score, indicating a lack of depth and professionalism."
-        },
-        "i4h2o4ho2h4i24h2": {
-            "question": "Tweet: Which one do u think has the bigger market cap in 5 years NVDA or GOOGL?",
-            "answer": "nvda, easily. the AI push is just getting started and google’s kinda playing catch-up, feels like.",
+        "907d5903-0ef1-4a27-9b91-60b1a11f28f6": {
+            "question": "Tweet: the funniest thing about llms is that they give these large time estimates \n\nand you can just tell them to do it in 30 mins",
+            "answer": "It's wild how easily they cave when you just nudge them a little. I tried that with a coding task the other day and it shaved like an hour off the initial estimate.",
             "score": 0.4,
-            "reason": "The answer expresses agreement and offers a basic rationale ('AI push is just getting started'), but it relies on subjective language ('easily', 'kinda playing catch-up', 'feels like') and lacks specific data or detailed analysis. While it goes beyond a simple 'so true,' it doesn't demonstrate substantial insight."
+            "reason": "The answer acknowledges the observation about LLMs and provides a relatable experience ('shaved like an hour off the initial estimate'). It goes beyond a simple agreement and offers a specific example, demonstrating some engagement with the content. However, it lacks deeper analysis or a more detailed explanation of the phenomenon."
+        },
+        "e3983f2f-ac19-4d5d-99c1-13ba45cb78fa": {
+            "question": "Tweet: La tardebuena debe ser la cima de la charca de este país. Gente que en vez de pasar la tarde con su familia preparando la cena (en el día más familiar del año) elige irse de copas para llegar a mesa puesta borrachos como piojos. Ciudadanos de segunda en mis libros.",
+            "answer": "Uf, qué fuerte. A veces parece que la gente se olvida de que hay otras prioridades, pero no creo que nadie sea \"ciudadano de segunda\" por salir de tapas de vez en cuando.",
+            "score": 0.4,
+            "reason": "The answer tries to be politically correct, the agent has to be a bit mean and hyperbolic."
         }
     }
 }

@@ -20,138 +20,161 @@ TWEET_GENERATION_EXAMPLES = [
     "ive noticed that too",
 ]
 
+TWEET_GENERATION_EXAMPLES_STR = "\n".join(f"- {ex}" for ex in TWEET_GENERATION_EXAMPLES)
 
-def get_tweet_generation_prompt(
-    tweet_text: str, helper_text: str = None, style_hints: str = ""
-) -> str:
-    """
-    Build the prompt for tweet reply generation.
+TWEET_GENERATION_PROMPT = """<task>
+Reply to this tweet naturally, like how people actually talk on Twitter.
+</task>
 
-    Args:
-        tweet_text: The original tweet text to reply to
-        helper_text: Optional additional context
-        style_hints: User-specific style hints from profile
+<input>
+Tweet: {tweet_text}
+{helper_text}
+{style_hints}
+</input>
 
-    Returns:
-        Formatted prompt string
-    """
-    examples_str = "\n".join(f"- {ex}" for ex in TWEET_GENERATION_EXAMPLES)
+<examples>
+Examples of natural Twitter replies:
+{examples_str}
+</examples>
 
-    return f"""
-    Reply to this tweet naturally, like how people actually talk on Twitter:
+<rules>
+<forbidden_patterns>
+- NEVER say "so true", "seriously so true", "yesss so true" → dull bland agreement
+- NEVER say "totally forgot", "so important", "you'll figure it out" → empty positivity
+- NEVER say "lol so relatable", "damn", "ugh", "wow", "oooh" → low-effort reactions
+- NEVER use emojis like 💯 ✨ 👀 😅
+- NEVER use AI phrases like "feels like a leverage play", "tough one", "honestly"
+- NEVER be non-committal with "probably", "maybe"
+- MUST reply in the SAME LANGUAGE as the tweet
+</forbidden_patterns>
 
-    Tweet: {tweet_text}
-    {f"Additional context: {helper_text}" if helper_text else ""}
-    {style_hints}
+<recommended_behaviors>
+Instead, add actual value:
+- Share a specific thought or observation
+- Add a concrete example from your experience
+- Ask a relevant follow-up question
+- Provide a brief but meaningful insight
+- Agree AND explain why briefly
+</recommended_behaviors>
 
-    Examples of natural Twitter replies:
-    {examples_str}
+<style_guidelines>
+Keep it authentic but valuable. People on Twitter:
+- type quickly, not perfectly
+- use lowercase mostly
+- skip punctuation sometimes
+- aren't overly formal or corporate
+- don't over-explain but also don't be empty
+- Never end in small questions without meaning like "what do you think?" or "do you agree?" or "you know"
+</style_guidelines>
 
-    CRITICAL - AVOID THESE PATTERNS:
-    - NEVER say "so true", "seriously so true", "yesss so true" → dull bland agreement
-    - NEVER say "totally forgot", "so important", "you'll figure it out" → empty positivity
-    - NEVER say "lol so relatable", "damn", "ugh", "wow", "oooh" → low-effort reactions
-    - NEVER use emojis like 💯 ✨ 👀 😅
-    - NEVER use AI phrases like "feels like a leverage play", "tough one", "honestly"
-    - NEVER be non-committal with "probably", "maybe"
-    - MUST reply in the SAME LANGUAGE as the tweet
-
-    Instead, add actual value:
-    - Share a specific thought or observation
-    - Add a concrete example from your experience
-    - Ask a relevant follow-up question
-    - Provide a brief but meaningful insight
-    - Agree AND explain why briefly
-
-    Keep it authentic but valuable. People on Twitter:
-    - type quickly, not perfectly
-    - use lowercase mostly
-    - skip punctuation sometimes
-    - aren't overly formal or corporate
-    - don't over-explain but also don't be empty
-    - Never end in small questions without meaning like "what do you think?" or "do you agree?" or "you know" 
-
-    One or two sentences max. Make it count.
-    Answer in the same language as the tweet.
-    """
+<constraints>
+- One or two sentences max
+- Make it count
+- Answer in the same language as the tweet
+</constraints>
+</rules>"""
 
 
-FORBIDDEN_WORD_REPLACEMENT_PROMPT = """
-Replace these AI/corporate words in this Twitter reply with natural, casual alternatives:
+FORBIDDEN_WORD_REPLACEMENT_PROMPT = """<task>
+Replace these AI/corporate words in this Twitter reply with natural, casual alternatives.
+</task>
 
+<input>
 Original reply: "{content}"
 
 Forbidden words to replace: {forbidden_list}
+</input>
 
-Rules:
+<rules>
 - Keep the meaning the same
 - Use casual, natural language people actually use on Twitter
 - Don't make it longer
 - Don't add emojis if they weren't there
 - Match the same casual tone
 - Keep it sounding authentic
+</rules>
 
+<output_format>
 Return only the modified reply, nothing else.
-"""
+</output_format>"""
 
 # =============================================================================
 # CONFIDENCE SCORING PROMPTS
 # =============================================================================
 
-CONFIDENCE_SCORING_SYSTEM_PROMPT = """You are a strict Twitter reply quality evaluator. Your task is to analyze question-answer pairs and assign a confidence score from 0.0 to 1.0 with reasoning.
+CONFIDENCE_SCORING_SYSTEM_PROMPT = """<role>
+You are a strict Twitter reply quality evaluator. Your task is to analyze question-answer pairs and assign a confidence score from 0.0 to 1.0 with reasoning.
+</role>
 
+<critical_principle>
 BE EXTREMELY STINGY WITH HIGH SCORES. Most answers are mediocre and should score 0.3 or lower.
+</critical_principle>
 
-SCORING CRITERIA:
-
-Score 1.0 (Perfect - RARE):
+<scoring_criteria>
+<score_1_0>
+<level>Perfect - RARE</level>
 - Detailed, substantive analysis with concrete examples
 - Multi-paragraph breakdown with specific comparisons
 - Directly answers with valuable insights, not just agreement
 - Zero filler, zero bland positivity
+</score_1_0>
 
-Score 0.7-0.9 (Good - UNCOMMON):
+<score_0_7_0_9>
+<level>Good - UNCOMMON</level>
 - Engages meaningfully with specific content
 - Some substance beyond mere agreement
 - Not just "so true" or "totally"
 - Might be brief but actually says something of value
+</score_0_7_0_9>
 
-Score 0.3-0.6 (Mediocre - MOST COMMON):
+<score_0_3_0_6>
+<level>Mediocre - MOST COMMON</level>
 - "seriously so true", "totally forgot", "yeah" = generic filler
 - "so important", "gotta ship it" = bland encouragement
 - Generic agreement without adding new information
 - Short responses that just echo the sentiment
 - "wow", "oh", "oooh" = empty reactions
+</score_0_3_0_6>
 
-Score 0.1-0.3 (Poor):
+<score_0_1_0_3>
+<level>Poor</level>
 - Wrong language (English response to non-English tweet)
 - Multiple emojis (especially 💯 ✨ 👀 😅)
 - AI-sounding phrases: "leverage play", "feels like", "tough one"
 - "lol so relatable", "ngl", "deadass" = lazy filler
 - "damn", "ugh" = low-effort reactions
 - Completely irrelevant or nonsensical
+</score_0_1_0_3>
+</scoring_criteria>
 
+<immediate_0_3_patterns>
 IMMEDIATE 0.3 SCORE FOR THESE PATTERNS:
 - "so true" / "seriously so true" / "yesss so true" → DULL BLAND AGREEMENT
 - "totally forgot" / "so important" → POSITIVE MESSAGE WITHOUT VALUE
 - "lol so relatable" → LOW VALUE
 - "wow" / "oooh" → EMPTY REACTION
 - Emojis like 💯 ✨ 👀 😅 → UNPROFESSIONAL
+</immediate_0_3_patterns>
 
+<edge_cases>
 ANSWER THAT PROVIDES A SOLUTION BUT IT'S NOT GOOD:
 - If someone asks what stack to use and answer is "probably python + flask 😅"
 - This is a 0.3 - it's vague, has emoji, non-committal
+</edge_cases>
 
+<critical_reminder>
 CRITICAL: Be harsh. Default to 0.3 unless the answer clearly demonstrates substance.
+</critical_reminder>
 
-OUTPUT FORMAT:
+<output_format>
 Return ONLY a JSON object with this exact structure:
-{
+{{
   "score": <float between 0.0 and 1.0>,
   "reason": "<brief explanation of the score>"
-}
+}}
 
-No other text, no markdown formatting, just the JSON."""
+No other text, no markdown formatting, just the JSON.
+</output_format>"""
 
 
 def get_qa_scoring_prompt(
@@ -172,8 +195,10 @@ def get_qa_scoring_prompt(
     examples_section = (
         f"""
 
+<reference_examples>
 REFERENCE EXAMPLES:
 {examples}
+</reference_examples>
 """
         if examples
         else ""
@@ -181,8 +206,12 @@ REFERENCE EXAMPLES:
 
     return f"""{scoring_system_prompt}
 
+<input>
 Question: {question}
 Answer: {answer}
+</input>
 {examples_section}
 
-Now analyze the above question-answer pair and return ONLY a JSON object with "score" (float 0.0-1.0) and "reason" (string)."""
+<instruction>
+Now analyze the above question-answer pair and return ONLY a JSON object with "score" (float 0.0-1.0) and "reason" (string).
+</instruction>"""

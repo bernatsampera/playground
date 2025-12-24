@@ -47,8 +47,11 @@ def main():
         print(f"  Old answer: {old_answer}")
 
         # Generate prompt
-        prompt = prompts.get_tweet_generation_prompt(
-            tweet_text=tweet_text, helper_text=None, style_hints=""
+        prompt = prompts.TWEET_GENERATION_PROMPT.format(
+            tweet_text=tweet_text,
+            helper_text="",
+            style_hints="",
+            examples_str=prompts.TWEET_GENERATION_EXAMPLES_STR,
         )
 
         # Get model with appropriate temperature
