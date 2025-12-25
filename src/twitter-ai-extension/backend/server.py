@@ -3,10 +3,10 @@ import uuid
 from pathlib import Path
 from typing import Dict, Optional
 
+import ai_config
 import prompts
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_ollama import ChatOllama
 from pydantic import BaseModel
 from tweet_generation import ReplyScorer, UserProfile
 from tweet_generation.generation import clean_content, get_model_for_context
@@ -40,7 +40,7 @@ class FeedbackPayload(BaseModel):
 
 
 # Default model instance
-model = ChatOllama(model="gemma3:12b", temperature=0.7)
+model = ai_config.get_model()
 
 # In-memory user profile storage (use proper DB in production)
 user_profiles: Dict[str, UserProfile] = {}

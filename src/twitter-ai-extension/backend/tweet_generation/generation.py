@@ -6,8 +6,8 @@ and the regeneration script.
 """
 
 import re
-from langchain_ollama import ChatOllama
 
+import ai_config
 import prompts
 from tweet_generation import forbidden_words
 
@@ -15,21 +15,16 @@ from tweet_generation import forbidden_words
 MAX_FORBIDDEN_WORDS_ITERATIONS = 2
 
 
-def get_model_for_context(tweet_text: str) -> ChatOllama:
+def get_model_for_context(tweet_text: str):
     """
     Dynamic temperature based on context and expected reply length.
 
     Shorter, more casual replies need higher temperature for creativity.
     Longer, more thoughtful replies can use lower temperature.
-    """
-    if len(tweet_text) < 100:  # Short tweet
-        temp = 0.9  # More creative, varied responses
-    elif len(tweet_text) < 200:  # Medium tweet
-        temp = 0.8
-    else:  # Long tweet
-        temp = 0.7  # More focused responses
 
-    return ChatOllama(model="gemma3:12b", temperature=temp)
+    Delegates to the centralized ai_config module.
+    """
+    return ai_config.get_model_for_context(tweet_text)
 
 
 def get_forbidden_words_in_content(content: str) -> list[str]:
@@ -66,7 +61,7 @@ def clean_content(
         return content
 
     # Use AI to find natural replacements for forbidden words
-    replacement_model = ChatOllama(model="gemma3:12b", temperature=0.8)
+    replacement_model = ai_config.get_content_cleaning_model()
 
     forbidden_list = ", ".join(found)
 

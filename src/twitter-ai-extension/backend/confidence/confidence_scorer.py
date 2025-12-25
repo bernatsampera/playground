@@ -1,7 +1,7 @@
 """
 Confidence Scorer for AI-generated Twitter replies.
 
-This module uses an LLM (gemma3:12b) to analyze question-answer pairs
+This module uses an LLM to analyze question-answer pairs
 and assign confidence scores with reasoning, based on historical patterns.
 """
 
@@ -9,11 +9,7 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple
 
-from langchain_ollama import ChatOllama
-
-# Import prompts from parent directory module
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import ai_config
 import prompts
 
 
@@ -34,7 +30,7 @@ class ConfidenceScorer:
             scored_history_path = os.path.join(base_dir, "data", "scored_history.json")
 
         self.scored_history_path = scored_history_path
-        self.model = ChatOllama(model="gemma3:12b", temperature=0.3)
+        self.model = ai_config.get_confidence_scorer_model()
         self._examples_cache: Optional[str] = None
 
     def _load_historical_examples(self) -> str:
@@ -95,7 +91,7 @@ Reason: {entry.get("reason", "N/A")}"""
             scoring_system_prompt=prompts.CONFIDENCE_SCORING_SYSTEM_PROMPT,
             question=question,
             answer=answer,
-            examples=examples
+            examples=examples,
         )
 
         try:
@@ -253,7 +249,7 @@ Reason: {entry.get("reason", "N/A")}"""
 
 # Convenience function for direct usage
 def score_reply(
-    tweet_text: str, reply_text: str, model_name: str = "gemma3:12b"
+    tweet_text: str, reply_text: str, model_name: str = None
 ) -> Tuple[float, str]:
     """
     Quick function to score a single reply.
@@ -261,14 +257,14 @@ def score_reply(
     Args:
         tweet_text: Original tweet/question
         reply_text: Generated reply/answer
-        model_name: Ollama model to use
+        model_name: Optional custom model name (defaults to ai_config.DEFAULT_MODEL)
 
     Returns:
         Tuple of (score: float, reason: str)
     """
     scorer = ConfidenceScorer()
-    if model_name != "gemma3:12b":
-        scorer.model = ChatOllama(model=model_name, temperature=0.3)
+    if model_name is not None and model_name != ai_config.DEFAULT_MODEL:
+        scorer.model = ai_config.get_confidence_scorer_model(model=model_name)
     return scorer.score_qa_pair(tweet_text, reply_text)
 
 

@@ -21,30 +21,6 @@ cd backend
 uv run regenerate_answers.py
 ```
 
-**What it does:**
-- Reads all questions from `data/qa_history.json`
-- Generates new answers using `prompts.get_tweet_generation_prompt()`
-- Applies forbidden word filtering (max 2 retries)
-- Overwrites `data/qa_history.json` with new answers
-
-**Output example:**
-```
-Loading QA history from: data/qa_history.json
-Found 11 QA pairs to regenerate.
-
-[1/11] Processing: 503cf4f4-4eb4-4f87-af7b...
-  Tweet: Day 89/90
-Launched the app on a cycling sub...
-  Old answer: ugh that sucks. it's always a sh...
-  AI raw: damn that's rough. launching never goe...
-  Cleaned: that's rough. launching never goes as p...
-
-Saving 11 regenerated answers to: data/qa_history.json
-Done!
-```
-
----
-
 ## Workflow 2: Confidence Scoring
 
 **Purpose:** Score all QA pairs and separate into "approved" (good) vs "rejected" (bad).
@@ -54,64 +30,9 @@ Done!
 **Run:**
 ```bash
 cd backend
-uv run confidence/confidence_scorer.py
+uv run -m confidence.confidence_scorer 
 ```
 
-**What it does:**
-- Reads all QA pairs from `data/qa_history.json`
-- Scores each (0.0 to 1.0) using LLM analysis
-- Categorizes: score >= 0.7 = approved, score < 0.7 = rejected
-- Saves results to `data/scored_history.json`
-
-**Output example:**
-```
-Confidence Scorer - Analyzing all QA pairs
-
-==================================================
-Loading QA pairs from qa_history.json...
-
-Scoring complete! Processed 11 pairs.
-
-==================================================
-RESULTS:
-==================================================
-
-ID: 503cf4f4-4eb4-4f87-af7b...
-Score: 0.7
-Reason: Good answer, but could be more specific...
-Q: Tweet: Day 89/90
-Launched the app on a cycling sub...
-A: ugh that sucks. it's always a sh...
-
-==================================================
-Approved (score >= 0.7): 2
-Rejected (score < 0.7): 9
-==================================================
-```
-
-**Output file:** `data/scored_history.json`
-```json
-{
-  "approved": {
-    "qa-id-1": {
-      "question": "...",
-      "answer": "...",
-      "score": 1.0,
-      "reason": "Perfect answer, very detailed and specific."
-    }
-  },
-  "rejected": {
-    "qa-id-2": {
-      "question": "...",
-      "answer": "...",
-      "score": 0.3,
-      "reason": "Uses damn and uses emojis."
-    }
-  }
-}
-```
-
----
 
 ## Workflow 3: Interactive Testing (Single Reply)
 
@@ -200,10 +121,10 @@ When tweaking prompts or logic:
 
 ```bash
 # Regenerate all answers
-uv run regenerate_answers.py
+uv run -m regenerate_answers 
 
 # Score all QA pairs
-uv run confidence/confidence_scorer.py
+uv run -m confidence.confidence_scorer 
 
 # Start API server
 uv run -m uvicorn server:app --reload

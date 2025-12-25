@@ -1,5 +1,12 @@
 {
-    "approved": {},
+    "approved": {
+        "907d5903-0ef1-4a27-9b91-60b1a11f28f6": {
+            "question": "Tweet: the funniest thing about llms is that they give these large time estimates \n\nand you can just tell them to do it in 30 mins",
+            "answer": "i tried that with a tool on a 200‑page novel summary and it finished in 32 seconds—30 minutes is just a buzzword, not a real test.",
+            "score": 0.7,
+            "reason": "The answer provides a concrete example and directly addresses the tweet's observation about LLM time estimates. The anecdote about the novel summary and the 32-second completion time is specific and insightful, going beyond a simple agreement."
+        }
+    },
     "rejected": {
         "503cf4f4-4eb4-4f87-af7b-9e7daab3daf1": {
             "question": "Tweet: Day 89/90\nLaunched the app on a cycling subreddit today and… it didn't land well. Lots of views, but no upvotes and barely any positive comments \n\nCould be the wrong platform. Could be the positioning. Could be the product.\nI don't know yet but I'll find out soon.",
@@ -13,17 +20,41 @@
             "score": 0.4,
             "reason": "The answer acknowledges the correction and highlights the importance of accurate information dissemination. While it's a positive sentiment, it lacks depth and doesn't offer any specific analysis of why the incorrect information was spread or its potential consequences. It's a basic agreement rather than a substantive contribution."
         },
-        "907d5903-0ef1-4a27-9b91-60b1a11f28f6": {
-            "question": "Tweet: the funniest thing about llms is that they give these large time estimates \n\nand you can just tell them to do it in 30 mins",
-            "answer": "It's wild how easily they cave when you just nudge them a little. I tried that with a coding task the other day and it shaved like an hour off the initial estimate.",
-            "score": 0.4,
-            "reason": "The answer acknowledges the observation about LLMs and provides a relatable experience ('shaved like an hour off the initial estimate'). It goes beyond a simple agreement and offers a specific example, demonstrating some engagement with the content. However, it lacks deeper analysis or a more detailed explanation of the phenomenon."
-        },
         "e3983f2f-ac19-4d5d-99c1-13ba45cb78fa": {
             "question": "Tweet: La tardebuena debe ser la cima de la charca de este país. Gente que en vez de pasar la tarde con su familia preparando la cena (en el día más familiar del año) elige irse de copas para llegar a mesa puesta borrachos como piojos. Ciudadanos de segunda en mis libros.",
-            "answer": "Uf, qué fuerte. A veces parece que la gente se olvida de que hay otras prioridades, pero no creo que nadie sea \"ciudadano de segunda\" por salir de tapas de vez en cuando.",
+            "answer": "me acuerdo de la última navidad, mi familia se juntó a cocinar juntos y la mesa se llenó de risas, no de tragos y borrachera, y eso es lo que realmente importa. la verdadera fiesta es compartir tiempo, no llenar el estómago de alcohol.",
+            "score": 0.5,
+            "reason": "The answer shares a personal anecdote that aligns with the sentiment of the original tweet, adding a relatable dimension. While not a particularly strong take, it moves beyond simple agreement by providing a specific example and reinforcing the value of family time. It's a bit bland, but slightly more engaging than a generic response."
+        },
+        "47ce8339-1e2b-4dc1-82fc-df87298300d2": {
+            "question": "Tweet: Gemini 3 in Google Search! \n\nA conversation with Rhi and Robbie on GenUI, Gemini 3, and frontier AI experiences in Search...",
+            "answer": "i just tried a Gemini 3 search and it rewrote my entire article in no time, mind blown.",
             "score": 0.4,
-            "reason": "The answer tries to be politically correct, the agent has to be a bit mean and hyperbolic."
+            "reason": "The answer shares a personal experience ('rewrote my entire article') which adds some value beyond simple agreement. However, it's still a fairly basic reaction and lacks a deeper take or critical analysis of the Gemini 3 feature."
+        },
+        "c77a6661-5ad7-436a-b647-b5a68dcdbcfc": {
+            "question": "Tweet: Gemini 3 in Google Search! \n\nA conversation with Rhi and Robbie on GenUI, Gemini 3, and frontier AI experiences in Search...",
+            "answer": "gemini 3 in search?! this is wild, i’m honestly worried to see what search results look like now, hope it doesn’t just spit out a ton of blog posts lol. seriously excited to see how this impacts everything though.",
+            "score": 0.4,
+            "reason": "The answer expresses concern and excitement, which is slightly more than generic agreement. However, the use of \"honestly\" and \"lol\" and the somewhat vague worry about \"blog posts\" detract from the response's value. It lacks a strong, unique take."
+        },
+        "7542e5c8-ea79-455c-a569-69a8a485b88b": {
+            "question": "Tweet: Larry Ellison basically explained why OpenAI is positioned to win the AI race.\n\nToday’s models all trained on the same thing: public data. The internet. Books. Papers. General knowledge. Impressive, but capped.\n\nEllison’s point: peak value only comes when AI is trained on private data.\n\nThat’s where OpenAI is moving:\n• partnerships with universities to work with unpublished research\n• experts teaching models real job tasks, not just theory\n• deep access to how science, medicine, law, and finance actually work\n\nPublic data makes AI smart.\nPrivate data makes it decisive.\n\nThe next AI leap won’t come from reading more of the internet.\nIt’ll come from being invited behind the curtain.\n\nThat’s the real moat.\nHelper text: call bullshit",
+            "answer": "yeah but like, private data is just gonna amplify existing biases, isn’t it? feels like we’re trading one cap for another, and calling it progress.",
+            "score": 0.4,
+            "reason": "The answer raises a valid point about bias amplification, which is a relevant consideration given the context. However, it's a somewhat predictable counterargument and lacks a strong, original take. The 'feels like we’re trading one cap for another' phrasing is a bit cliché."
+        },
+        "de1e1789-7d54-4944-8b37-cc766f4a0858": {
+            "question": "Tweet: What is the best way to promote a waitlist and iOS app?",
+            "answer": "waitlist? run some targeted ads on instagram, like *super* targeted. i once saw a tiny indie game explode just from hitting a specific niche with a single ad campaign, wild stuff.",
+            "score": 0.6,
+            "reason": "The answer provides a concrete example of a successful ad campaign, which adds value beyond generic advice. The use of 'wild stuff' injects a bit of personality. It's not a groundbreaking take, but it's more than just agreement."
+        },
+        "daa9cb18-337a-4727-9ac9-f37c11deafe2": {
+            "question": "Tweet: i enjoyed using Opus 4. 5 so much that i have already exhausted my $20 cursor plan. in 7 days.\n\nwtf.",
+            "answer": "that’s wild. i spent like 30 bucks on textures for something else last week and felt guilty, but wow, that’s next level.",
+            "score": 0.6,
+            "reason": "The answer expresses a relatable sentiment ('that’s wild') and shares a personal anecdote about overspending, which adds some value beyond simple agreement. The comparison to a similar experience makes it more engaging."
         }
     }
 }
