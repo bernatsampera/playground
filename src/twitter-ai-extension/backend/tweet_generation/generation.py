@@ -9,6 +9,7 @@ import re
 
 import ai_config
 import prompts
+
 from tweet_generation import forbidden_words
 
 # Maximum iterations for forbidden word cleaning (2 tries max)
@@ -51,6 +52,9 @@ def clean_content(
     """
     Cleans AI-sounding words from content using AI to find better replacements.
     """
+    # Remove words wrapped in asterisks (e.g., *choice* becomes choice)
+    content = re.sub(r"\*([^*]+)\*", r"\1", content)
+
     # First pass: Check for forbidden words
     found = get_forbidden_words_in_content(content)
 
@@ -58,6 +62,8 @@ def clean_content(
         # Just clean up the dashes and return
         content = content.replace(" — ", ", ")
         content = content.replace(" – ", ", ")
+        content = content.replace(" - ", ", ")
+
         return content
 
     # Use AI to find natural replacements for forbidden words
