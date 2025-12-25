@@ -1,30 +1,6 @@
 {
-  "907d5903-0ef1-4a27-9b91-60b1a11f28f6": {
-    "question": "Tweet: the funniest thing about llms is that they give these large time estimates \n\nand you can just tell them to do it in 30 mins",
-    "answer": "i tried that with a tool on a 200‑page novel summary and it finished in 32 seconds—30 minutes is just a buzzword, not a real test."
-  },
-  "e3983f2f-ac19-4d5d-99c1-13ba45cb78fa": {
-    "question": "Tweet: La tardebuena debe ser la cima de la charca de este país. Gente que en vez de pasar la tarde con su familia preparando la cena (en el día más familiar del año) elige irse de copas para llegar a mesa puesta borrachos como piojos. Ciudadanos de segunda en mis libros.",
-    "answer": "me acuerdo de la última navidad, mi familia se juntó a cocinar juntos y la mesa se llenó de risas, no de tragos y borrachera, y eso es lo que realmente importa. la verdadera fiesta es compartir tiempo, no llenar el estómago de alcohol."
-  },
-  "47ce8339-1e2b-4dc1-82fc-df87298300d2": {
-    "question": "Tweet: Gemini 3 in Google Search! \n\nA conversation with Rhi and Robbie on GenUI, Gemini 3, and frontier AI experiences in Search...",
-    "answer": "i just tried a Gemini 3 search and it rewrote my entire article in no time, mind blown."
-  },
-  "c77a6661-5ad7-436a-b647-b5a68dcdbcfc": {
-    "question": "Tweet: Gemini 3 in Google Search! \n\nA conversation with Rhi and Robbie on GenUI, Gemini 3, and frontier AI experiences in Search...",
-    "answer": "gemini 3 in search?! this is wild, i’m honestly worried to see what search results look like now, hope it doesn’t just spit out a ton of blog posts lol. seriously excited to see how this impacts everything though."
-  },
-  "7542e5c8-ea79-455c-a569-69a8a485b88b": {
-    "question": "Tweet: Larry Ellison basically explained why OpenAI is positioned to win the AI race.\n\nToday’s models all trained on the same thing: public data. The internet. Books. Papers. General knowledge. Impressive, but capped.\n\nEllison’s point: peak value only comes when AI is trained on private data.\n\nThat’s where OpenAI is moving:\n• partnerships with universities to work with unpublished research\n• experts teaching models real job tasks, not just theory\n• deep access to how science, medicine, law, and finance actually work\n\nPublic data makes AI smart.\nPrivate data makes it decisive.\n\nThe next AI leap won’t come from reading more of the internet.\nIt’ll come from being invited behind the curtain.\n\nThat’s the real moat.\nHelper text: call bullshit",
-    "answer": "yeah but like, private data is just gonna amplify existing biases, isn’t it? feels like we’re trading one cap for another, and calling it progress."
-  },
-  "de1e1789-7d54-4944-8b37-cc766f4a0858": {
-    "question": "Tweet: What is the best way to promote a waitlist and iOS app?",
-    "answer": "waitlist? run some targeted ads on instagram, like *super* targeted. i once saw a tiny indie game explode just from hitting a specific niche with a single ad campaign, wild stuff."
-  },
-  "daa9cb18-337a-4727-9ac9-f37c11deafe2": {
-    "question": "Tweet: i enjoyed using Opus 4. 5 so much that i have already exhausted my $20 cursor plan. in 7 days.\n\nwtf.",
-    "answer": "that’s wild. i spent like 30 bucks on textures for something else last week and felt guilty, but wow, that’s next level."
+  "606aab74-8580-48e9-a9da-82f40e511208": {
+    "question": "Tweet: vibe-coding is actually so fun when you don't use CLI only\n\ni like how Antigravity works",
+    "answer": "cli is a necessary evil, i guess, but anything that gets you doing instead of configuring is a win. antigravity’s drag-and-drop workflow is a beautiful escape from tons of terminal commands"
   }
 }

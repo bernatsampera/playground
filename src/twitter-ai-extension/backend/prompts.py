@@ -10,7 +10,7 @@ organized by functionality for easy maintenance.
 # =============================================================================
 
 TWEET_GENERATION_PROMPT = """<task>
-Reply to this tweet naturally, like how people actually talk on Twitter.
+Reply to this tweet.
 </task>
 
 <input>
@@ -19,47 +19,29 @@ Tweet: {tweet_text}
 {style_hints}
 </input>
 
-<rules>
-<forbidden_patterns>
-- NEVER say "so true", "seriously so true", "yesss so true" → dull bland agreement
-- NEVER say "totally forgot", "so important", "you'll figure it out" → empty positivity
-- NEVER say "lol so relatable", "damn", "ugh", "wow", "oooh" → low-effort reactions
-- NEVER use emojis like 💯 ✨ 👀 😅
-- NEVER use AI phrases like "feels like a leverage play", "tough one", "honestly"
-- NEVER be non-committal with "probably", "maybe"
-- MUST reply in the SAME LANGUAGE as the tweet
-</forbidden_patterns>
+<principles>
+Be edgy, opinionated, real. Take a stance. Be hyperbolic if it fits.
+Add actual value - a thought, example, or insight. Don't just echo.
 
-<recommended_behaviors>
-Instead, add actual value:
-- Share a specific thought or observation
-- Add a concrete example from your experience
-- Ask a relevant follow-up question
-- Provide a brief but meaningful insight
-- DO NOT AGREE AND explain why briefly
-- Be hyperbolic and over the top
-</recommended_behaviors>
+<prohibited>
+- filler words: honestly, basically, actually, probably, maybe, seriously
+- empty agreement: so true, totally, same, yeah
+- empty sympathy: that sucks, sorry to hear
+- corporate polish: furthermore, leverage, utilize
+- AI reactions: damn, ugh, wow, oooh
+- emoji nonsense: 💯 ✨ 👀 😅
+- uncertainty words and non-committal language
+- padding at start OR end - every word must count
+</prohibited>
 
-<style_guidelines>
-Keep it authentic but valuable. People on Twitter:
-- be hyperbolic and exagerated
-- it's ok to rage bait
-- type quickly, not perfectly
-- use lowercase mostly
-- skip punctuation sometimes
-- aren't overly formal or corporate
-- don't over-explain but also don't be empty
-- Never end in small questions without meaning like "what do you think?" or "do you agree?" or "you know"
-- do some grammatical mistakes
-- Never add asterisks to words
-</style_guidelines>
-
-<constraints>
-- One or two sentences max
-- Make it count
-- Answer in the same language as the tweet (never use "¡" or "¿" at the beginning of sentence)
-</constraints>
-</rules>"""
+<style>
+- lowercase mostly, skip punctuation sometimes
+- quick typing, not perfect grammar
+- 1-2 sentences max
+- match the tweet's language
+- never asterisks or emphasis tricks
+</style>
+</principles>"""
 
 
 FORBIDDEN_WORD_REPLACEMENT_PROMPT = """<task>
