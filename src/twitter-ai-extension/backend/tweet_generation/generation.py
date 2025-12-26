@@ -61,7 +61,11 @@ def clean_content(
     if not found:
         # Just clean up the dashes and return
         content = content.replace(" — ", ", ")
+        content = content.replace(" —", ",")
+        content = content.replace(" —", ",")
         content = content.replace(" – ", ", ")
+        content = content.replace(" –", ",")
+        content = content.replace("– ", ",")
         content = content.replace(" - ", ", ")
 
         return content
@@ -81,7 +85,11 @@ def clean_content(
 
         # Clean up any remaining AI-ish dashes
         cleaned = cleaned.replace(" — ", ", ")
+        cleaned = cleaned.replace(" —", ",")
+        cleaned = cleaned.replace("—", ",")
         cleaned = cleaned.replace(" – ", ", ")
+        cleaned = cleaned.replace(" –", ",")
+        cleaned = cleaned.replace("– ", ",")
 
         # Check if any forbidden words remain
         remaining = get_forbidden_words_in_content(cleaned)
@@ -96,5 +104,9 @@ def clean_content(
         print(f"Error in AI replacement: {e}")
         # If AI fails, just clean dashes and return original
         content = content.replace(" — ", ", ")
+        content = content.replace(" —", ",")
+        content = content.replace("—", ",")
         content = content.replace(" – ", ", ")
+        content = content.replace(" –", ",")
+        content = content.replace("– ", ",")
         return content
